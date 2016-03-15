@@ -65,8 +65,8 @@ echo $p: setup environment
 export BUILD_DIR="${HOME}/build"
 export TOOL_DIR="${HOME}/tool"
 export RESULTS_DIR="${HOME}/results"
-export SCRIPTS_DIR=${HOME}/$(untar "${VMINPUTDIR}/scripts.tar.gz")
-#export SCRIPTS_DIR="${HOME}/scripts"
+#export SCRIPTS_DIR=${HOME}/$(untar "${VMINPUTDIR}/scripts.tar.gz")
+export SCRIPTS_DIR="${HOME}/scripts"
 export PYTHONPATH="${SCRIPTS_DIR}/lib:${PYTHONPATH}"
 
 echo
