@@ -25,13 +25,16 @@ function main {
 	local new_version="$2"
     local dest_dir="$1/$framework-$new_version"
 
-	local main_plat="scientific-6.4-64"
+	local main_plat="noarch"
 
     [[ ! -d "$dest_dir/$main_plat" ]] && mkdir -p "$dest_dir/$main_plat"
 
 	copy_scripts "$dest_dir/$main_plat"
 	cp $PWD/release/{LICENSE.txt,RELEASE_NOTES.txt} "$dest_dir"
 
+	md5_sum "$dest_dir"
+	return 0
+	
 	for other_plat in $(cat ~/bin/resources/all_platforms.txt | fgrep -v "$main_plat" ); do
 		mkdir -p $dest_dir/$other_plat/{in-files,swamp-conf}
 
@@ -48,7 +51,6 @@ function main {
 		[[ -f "$rvm" ]] && cp "$rvm" "$dest_dir/$plat/in-files"
 	done
 
-	md5_sum "$dest_dir"
 }
 
 function copy_scripts {
@@ -71,7 +73,7 @@ function copy_scripts {
 
 	cp -r $PWD/lib/* "$lib_dir"
 
-	local ruby_assess_dir="$lib_dir/ruby_assess"
+	local ruby_assess_dir="$lib_dir/js_assess"
 	mkdir $ruby_assess_dir
 	cp -r $PWD/src/* $ruby_assess_dir
 
