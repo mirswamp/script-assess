@@ -2,13 +2,14 @@ import os.path as osp
 import logging
 import logging.handlers
 
-from . import build_ruby
+
 from . import assess
 from .logger import LogTaskStatus
 from . import confreader
 from . import install_os_dependencies
 from . import results_parser
 from . import utillib
+from . import build_javascript
 
 
 def main(input_dir,
@@ -74,9 +75,9 @@ def _build_assess_parse(goal, input_root_dir, output_root_dir,
                         build_root_dir, tool_root_dir,
                         results_root_dir):
 
-    (exit_code, build_summary_file) = build_ruby.build(input_root_dir,
-                                                       output_root_dir,
-                                                       build_root_dir)
+    (exit_code, build_summary_file) = build_javascript.build(input_root_dir,
+                                                             output_root_dir,
+                                                             build_root_dir)
 
     if (exit_code == 0) and ('assess' in goal):
 

@@ -3,9 +3,10 @@ import re
 import shutil
 import os.path as osp
 import logging
+import json
+import glob
 from abc import ABCMeta
 import xml.etree.ElementTree as ET
-import yaml
 
 from . import utillib
 from . import confreader
@@ -15,6 +16,10 @@ from .utillib import UnpackArchiveError
 from .utillib import NotADirectoryException
 
 from . import utillib
+from collections import namedtuple
+
+
+GlobGlob = namedtuple('GlobGlob', ['dirs', 'files'])
 
 
 class EmptyPackageError(Exception):
@@ -129,6 +134,25 @@ class BuildSummary(metaclass=ABCMeta):
             BuildSummary._add(self._root, 'exit-signal', str(abs(exit_code)))
 
 
+class BuildSummaryJavascript(BuildSummary):
+
+    def __init__(self, build_root_dir, pkg_root_dir, pkg_conf):
+        BuildSummary.__init__(self, build_root_dir, pkg_root_dir, pkg_conf)
+        BuildSummary._add(self._root, 'package-dir', pkg_conf['package-dir'])
+        self.build_root_dir = build_root_dir
+
+    def add_build_artifacts(self, include):
+
+        build_artifacts_xml = BuildSummary._add(self._root, 'build-artifacts')
+        ruby_gem_xml = BuildSummary._add(build_artifacts_xml, 'ruby-src')
+
+
+        ruby_src_xml = BuildSummary._add(ruby_gem_xml, 'include')
+        for _file in include:
+            filepath = osp.relpath(_file, self.build_root_dir)
+            BuildSummary._add(ruby_src_xml, 'file', filepath)
+
+
 class JsPkg:
 
     PKG_ROOT_DIRNAME = "pkg1"
@@ -162,6 +186,60 @@ class JsPkg:
 
         return (exit_code, _environ)
 
+    @classmethod
+    def get_file_list(cls, root_dir, exclude_dir_list, file_ext):
+
+        def is_dirpath_in(dirpath, dir_list):
+            if dir_list:
+                return any(dirpath.startswith(path) for path in dir_list)
+            else:
+                return False
+
+        def os_walk():
+            '''os.walk with directories in exclude_dir_list and
+            hidden (begin with .) are ignored
+            '''
+
+            hidden_dir_list = []
+
+            for dirpath, dirnames, filenames in os.walk(root_dir):
+                if osp.basename(dirpath).startswith('.'):
+                    hidden_dir_list.append(dirpath)
+                elif not (is_dirpath_in(osp.join(dirpath, ''), exclude_dir_list) or \
+                          is_dirpath_in(osp.join(dirpath, ''), hidden_dir_list)):
+                    filepaths = [osp.normpath(osp.join(dirpath, _file)) \
+                                 for _file in filenames \
+                                 if not _file.startswith('.') and \
+                                 (osp.splitext(_file)[1] == file_ext)]
+                    if filepaths:
+                        yield filepaths
+
+        file_list = []
+        for filepaths in os_walk():
+            file_list.extend(filepaths)
+        return file_list
+
+    @classmethod
+    def glob_list(cls, root_dir, pattern_list):
+        '''Returns an GlobGlob object'''
+
+        def _glob(pattern_list):
+            for pattern in pattern_list:
+                if pattern:
+                    yield glob.glob(osp.join(root_dir, pattern))
+
+        dirs_list = set()
+        files_list = set()
+
+        for _fileset in _glob(pattern_list):
+            for _file in _fileset:
+                if osp.isdir(_file):
+                    dirs_list.add(_file)
+                else:
+                    files_list.add(_file)
+
+        return GlobGlob(dirs_list, files_list)
+    
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
 
         self.pkg_conf = confreader.read_conf_into_dict(pkg_conf_file)
@@ -181,37 +259,6 @@ class JsPkg:
             else:
                 self.pkg_dir = pkg_dir
 
-    def _get_files(self, exclude_str):
-        include = set()
-        exclude = set()
-        exclude_dir = set()
-        dirs = set()
-
-        if exclude_str:
-            for xpath in exclude_str.split(','):
-                if xpath.strip():
-                    if osp.isdir(osp.join(self.pkg_dir, xpath)):
-                        exclude_dir.add(osp.join(self.pkg_dir, xpath))
-                    elif osp.isfile(osp.join(self.pkg_dir, xpath)):
-                        exclude.add(osp.join(self.pkg_dir, xpath))
-                    else:
-                        logging.warning('Exclude path %s not found',
-                                        osp.join(self.pkg_dir, xpath))
-
-
-        for dirpath, _, filenames in utillib.os_walk(self.pkg_dir, exclude_dir):
-            rb_files = {osp.join(dirpath, _file) for _file in filenames \
-                        if osp.splitext(_file)[1] == '.rb'}
-            if rb_files:
-                if dirpath not in exclude_dir:
-                    include.update(rb_files)
-                    dirs.add(dirpath)
-                else:
-                    exclude.update(rb_files)
-
-        include.difference_update(exclude)
-        return (include, exclude, dirs)
-
     def _configure(self, build_root_dir, build_summary):
 
         with LogTaskStatus('configure') as status_dot_out:
@@ -230,10 +277,10 @@ class JsPkg:
                 errfile = osp.join(build_root_dir, 'config_stderr.out')
 
                 (exit_code, environ) = JsPkg.run_cmd(config_cmd,
-                                                       config_dir,
-                                                       outfile,
-                                                       errfile,
-                                                       "CONFIGURE")
+                                                     config_dir,
+                                                     outfile,
+                                                     errfile,
+                                                     "CONFIGURE")
 
                 build_summary.add_command('configure',
                                           config_cmd,
@@ -258,29 +305,67 @@ class JsPkg:
 
 class JsNodePkg(JsPkg):
 
+    @classmethod
+    def get_nodejs_files(cls, pkg_dir):
+
+        def npm_ignore_list():
+            if not osp.isfile(osp.join(pkg_dir, '.npmignore')):
+                return GlobGlob(set(), set())
+            else:
+                with open(osp.join(pkg_dir, '.npmignore')) as fobj:
+                    ignore_patterns = {_line.strip('\n') for _line in fobj.readlines()}
+                    ignore_patterns.add('node_modules')
+                    return JsPkg.glob_list(pkg_dir, ignore_patterns)
+
+        fileset = set()
+
+        with open(osp.join(pkg_dir, 'package.json')) as fobj:
+            pkg_json = json.load(fobj)
+
+            if 'main' in pkg_json:
+                if osp.isfile(osp.join(pkg_dir, pkg_json['main'])):
+                    fileset.add(osp.join(pkg_dir, pkg_json['main']))
+
+            if 'files' in pkg_json:
+                for _file in [osp.join(pkg_dir, f) \
+                              for f in pkg_json['files']]:
+                    if osp.isdir(_file):
+                        fileset.update(get_file_list(_file, None, '.js'))
+                    else:
+                        fileset.add(_file)
+            else:
+                ignore = npm_ignore_list()
+                fileset.update(JsPkg.get_file_list(pkg_dir, ignore.dirs, '.js'))
+
+        return fileset
+
+    @classmethod
+    def get_js_files(cls, pkg_dir, exclude_filter):
+
+        exclude = JsPkg.glob_list(pkg_dir, exclude_filter.split(','))
+
+        fileset = set()
+        if osp.isfile(osp.join(pkg_dir, 'package.json')):
+            fileset = cls.get_nodejs_files(pkg_dir)
+        else:
+            fileset.update(get_file_list(pkg_dir, None, '.js'))
+
+        fileset = fileset.difference(exclude.files)
+
+        fileset = fileset.difference(_file for _file in fileset \
+                                     for exdir in exclude.dirs \
+                                     if _file.startswith(exdir))
+
+        return fileset
+
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
         JsPkg.__init__(self, pkg_conf_file, input_root_dir, build_root_dir)
 
-    def _get_build_command(self):
-
-        if self.pkg_conf['build-sys'] == 'rake':
-            build_cmd = 'rake --nosystem --nosearch --rakefile %s %s %s' % \
-                        (self.pkg_conf.get('build-file', 'Rakefile'), \
-                         self.pkg_conf.get('build-target', ''), \
-                         self.pkg_conf.get('build-opt', ''))
-        else:
-            build_cmd = '%s %s %s %s' % (self.pkg_conf['build-cmd'],
-                                         self.pkg_conf.get('build-file', ''),
-                                         self.pkg_conf.get('build-opt', ''),
-                                         self.pkg_conf.get('build-target', ''))
-
-        return build_cmd
-
     def build(self, build_root_dir):
 
-        with BuildSummaryRubyNoGem(build_root_dir,
-                                   RubyGem.PKG_ROOT_DIRNAME,
-                                   self.pkg_conf) as build_summary:
+        with BuildSummaryJavascript(build_root_dir,
+                                    JsPkg.PKG_ROOT_DIRNAME,
+                                    self.pkg_conf) as build_summary:
 
             self._configure(build_root_dir, build_summary)
 
@@ -289,16 +374,18 @@ class JsNodePkg(JsPkg):
                 pkg_build_dir = osp.normpath(osp.join(self.pkg_dir,
                                                       self.pkg_conf.get('build-dir', '.')))
 
-                build_cmd = self._get_build_command()
+                build_cmd = ':'
                 outfile = osp.join(build_root_dir, 'build_stdout.out')
                 errfile = osp.join(build_root_dir, 'build_stderr.err')
 
-                (exit_code, environ) = RubyPkg.run_cmd(build_cmd,
-                                                       pkg_build_dir,
-                                                       outfile,
-                                                       errfile,
-                                                       'rake')
+                # (exit_code, environ) = RubyPkg.run_cmd(build_cmd,
+                #                                        pkg_build_dir,
+                #                                        outfile,
+                #                                        errfile,
+                #                                        'rake')
 
+                exit_code, environ = 0, dict(os.environ)
+                
                 build_summary.add_command('rake', build_cmd,
                                           [], exit_code, environ,
                                           environ['PWD'],
@@ -311,8 +398,8 @@ class JsNodePkg(JsPkg):
                                              osp.relpath(outfile, build_root_dir),
                                              osp.relpath(errfile, build_root_dir))
 
-                include, exclude, dirs = self._get_files(self.pkg_conf.get('package-exclude-paths',
-                                                                           None))
+                include = JsNodePkg.get_js_files(pkg_build_dir,
+                                                 self.pkg_conf.get('package-exclude-paths', ''))
 
                 if len(include) == 0:
                     err = EmptyPackageError(osp.basename(self.pkg_dir),
@@ -321,34 +408,8 @@ class JsNodePkg(JsPkg):
                     raise err
                 else:
                     build_summary.add_exit_code(0)
-                    build_summary.add_build_artifacts(include, exclude, dirs)
+                    build_summary.add_build_artifacts(include)
                     return (0, BuildSummary.FILENAME)
-
-
-class RubyNoBuild(RubySrc):
-
-    def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
-        RubySrc.__init__(self, pkg_conf_file, input_root_dir, build_root_dir)
-
-    def build(self, build_root_dir):
-
-        with BuildSummaryRubyNoGem(build_root_dir,
-                                   RubyGem.PKG_ROOT_DIRNAME,
-                                   self.pkg_conf) as build_summary:
-
-            with LogTaskStatus('build'):
-
-                include, exclude, dirs = self._get_files(self.pkg_conf.get('package-exclude-paths', None))
-                if len(include) == 0:
-                    err = EmptyPackageError(osp.basename(self.pkg_dir),
-                                            BuildSummary.FILENAME)
-                    build_summary.add_exit_code(err.exit_code)
-                    raise err
-                else:
-                    build_summary.add_exit_code(0)
-                    build_summary.add_build_artifacts(include, exclude, dirs)
-                    return (0, BuildSummary.FILENAME)
-
 
 def get_pkg_obj(pkg_conf_file, input_root_dir, build_root_dir):
 
@@ -356,7 +417,7 @@ def get_pkg_obj(pkg_conf_file, input_root_dir, build_root_dir):
 
     ruby_pkg_types = {
         'node-js' : JsNodePkg,
-        'other' : JsOther
+        'no-build' : JsNodePkg,
     }
 
     build_sys = pkg_conf['build-sys']

@@ -38,8 +38,7 @@ done
 export SWAMP_DIR=/opt/swamp-base
 
 function untar {
-    tar -xf "$1"
-	tar tzf "$1" | cut -d / -f 1 | uniq
+    sudo tar -xf "$1" --directory="$2" && { tar tf "$1" | cut -d / -f 1 | uniq; }
 }
 
 function get_conf_value {
@@ -60,13 +59,22 @@ if [[ -z "$VMPLATNAME" ]]; then
     export VMPLATNAME=$("$VMINPUTDIR/get-platform")
 fi
 
+#set -x -v
+
+(
+    OPT_SWAMP_DIR=/opt/swamp
+    cd $OPT_SWAMP_DIR;
+    NODE_DIR=$(untar $VMINPUTDIR/node-v4.4.0-linux-x64.tar.xz $OPT_SWAMP_DIR)
+    [[ $? == 0 ]] && export PATH="$OPT_SWAMP_DIR/$NODE_DIR/bin:$PATH"
+)
+
 echo
 echo $p: setup environment
 export BUILD_DIR="${HOME}/build"
 export TOOL_DIR="${HOME}/tool"
 export RESULTS_DIR="${HOME}/results"
-#export SCRIPTS_DIR=${HOME}/$(untar "${VMINPUTDIR}/scripts.tar.gz")
-export SCRIPTS_DIR="${HOME}/scripts"
+export SCRIPTS_DIR=${HOME}/$(untar "${VMINPUTDIR}/scripts.tar.gz")
+#export SCRIPTS_DIR="${HOME}/scripts"
 export PYTHONPATH="${SCRIPTS_DIR}/lib:${PYTHONPATH}"
 
 echo
