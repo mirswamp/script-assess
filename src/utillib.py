@@ -285,7 +285,7 @@ def glob_list(root_dir, pattern_list):
     files_list = set()
 
     if pattern_list:
-        for _fileset in _glob(pattern_list):
+        for _fileset in _glob():
             for _file in _fileset:
                 if osp.isdir(_file):
                     dirs_list.add(_file)
@@ -296,11 +296,9 @@ def glob_list(root_dir, pattern_list):
 
 def get_file_list(root_dir, exclude_pattern_list, file_ext):
 
-    def is_dirpath_in(dirpath, dir_list):
-        if dir_list:
-            return any(dirpath.startswith(path) for path in dir_list)
-        else:
-            return False
+    is_dirpath_in = lambda dirpath, dir_list: \
+                    any(dirpath.startswith(path) for path in dir_list) \
+                    if dir_list else False
 
     def os_walk():
         '''os.walk with directories in exclude_dir_list and
@@ -323,7 +321,7 @@ def get_file_list(root_dir, exclude_pattern_list, file_ext):
                 if filepaths:
                     yield filepaths
 
-    file_list = set()
+    file_list = list()
     for filepaths in os_walk():
         file_list.extend(filepaths)
     return file_list
