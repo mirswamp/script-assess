@@ -16,10 +16,6 @@ from .utillib import UnpackArchiveError
 from .utillib import NotADirectoryException
 
 from . import utillib
-from collections import namedtuple
-
-
-GlobGlob = namedtuple('GlobGlob', ['dirs', 'files'])
 
 
 class EmptyPackageError(Exception):
@@ -185,60 +181,6 @@ class JsPkg:
         logging.info('%s ENVIRONMENT %s', description, _environ)
 
         return (exit_code, _environ)
-
-    @classmethod
-    def get_file_list(cls, root_dir, exclude_dir_list, file_ext):
-
-        def is_dirpath_in(dirpath, dir_list):
-            if dir_list:
-                return any(dirpath.startswith(path) for path in dir_list)
-            else:
-                return False
-
-        def os_walk():
-            '''os.walk with directories in exclude_dir_list and
-            hidden (begin with .) are ignored
-            '''
-
-            hidden_dir_list = []
-
-            for dirpath, dirnames, filenames in os.walk(root_dir):
-                if osp.basename(dirpath).startswith('.'):
-                    hidden_dir_list.append(dirpath)
-                elif not (is_dirpath_in(osp.join(dirpath, ''), exclude_dir_list) or \
-                          is_dirpath_in(osp.join(dirpath, ''), hidden_dir_list)):
-                    filepaths = [osp.normpath(osp.join(dirpath, _file)) \
-                                 for _file in filenames \
-                                 if not _file.startswith('.') and \
-                                 (osp.splitext(_file)[1] == file_ext)]
-                    if filepaths:
-                        yield filepaths
-
-        file_list = []
-        for filepaths in os_walk():
-            file_list.extend(filepaths)
-        return file_list
-
-    @classmethod
-    def glob_list(cls, root_dir, pattern_list):
-        '''Returns an GlobGlob object'''
-
-        def _glob(pattern_list):
-            for pattern in pattern_list:
-                if pattern:
-                    yield glob.glob(osp.join(root_dir, pattern))
-
-        dirs_list = set()
-        files_list = set()
-
-        for _fileset in _glob(pattern_list):
-            for _file in _fileset:
-                if osp.isdir(_file):
-                    dirs_list.add(_file)
-                else:
-                    files_list.add(_file)
-
-        return GlobGlob(dirs_list, files_list)
     
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
 
@@ -309,13 +251,11 @@ class JsNodePkg(JsPkg):
     def get_nodejs_files(cls, pkg_dir):
 
         def npm_ignore_list():
-            if not osp.isfile(osp.join(pkg_dir, '.npmignore')):
-                return GlobGlob(set(), set())
-            else:
+            if osp.isfile(osp.join(pkg_dir, '.npmignore')):
                 with open(osp.join(pkg_dir, '.npmignore')) as fobj:
                     ignore_patterns = {_line.strip('\n') for _line in fobj.readlines()}
                     ignore_patterns.add('node_modules')
-                    return JsPkg.glob_list(pkg_dir, ignore_patterns)
+                    return ignore_patterns
 
         fileset = set()
 
@@ -330,31 +270,32 @@ class JsNodePkg(JsPkg):
                 for _file in [osp.join(pkg_dir, f) \
                               for f in pkg_json['files']]:
                     if osp.isdir(_file):
-                        fileset.update(get_file_list(_file, None, '.js'))
+                        fileset.update(utillib.get_file_list(_file, None, '.js'))
                     else:
                         fileset.add(_file)
             else:
-                ignore = npm_ignore_list()
-                fileset.update(JsPkg.get_file_list(pkg_dir, ignore.dirs, '.js'))
+                
+                fileset.update(utillib.get_file_list(pkg_dir,
+                                                     npm_ignore_list(), '.js'))
 
         return fileset
 
     @classmethod
     def get_js_files(cls, pkg_dir, exclude_filter):
 
-        exclude = JsPkg.glob_list(pkg_dir, exclude_filter.split(','))
+        exclude = utillib.glob_list(pkg_dir, exclude_filter.split(','))
 
         fileset = set()
         if osp.isfile(osp.join(pkg_dir, 'package.json')):
             fileset = cls.get_nodejs_files(pkg_dir)
         else:
-            fileset.update(get_file_list(pkg_dir, None, '.js'))
+            fileset.update(utillib.get_file_list(pkg_dir, None, '.js'))
 
         fileset = fileset.difference(exclude.files)
 
         fileset = fileset.difference(_file for _file in fileset \
                                      for exdir in exclude.dirs \
-                                     if _file.startswith(exdir))
+                                     if _file.startswith(osp.join(exdir, '')))
 
         return fileset
 
@@ -410,6 +351,7 @@ class JsNodePkg(JsPkg):
                     build_summary.add_exit_code(0)
                     build_summary.add_build_artifacts(include)
                     return (0, BuildSummary.FILENAME)
+
 
 def get_pkg_obj(pkg_conf_file, input_root_dir, build_root_dir):
 

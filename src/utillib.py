@@ -9,6 +9,7 @@ import re
 import string
 import shlex
 import uuid
+from collections import namedtuple
 
 
 if 'PermissionError' in __builtins__:
@@ -257,28 +258,6 @@ def quote_str(s):
 def get_uuid():
     return str(uuid.uuid4())
 
-def os_walk(root_dir, exclude):
-
-    if not osp.exists(root_dir) and osp.isfile(root_dir):
-        return
-
-    def is_path_in(dirpath, _list):
-        if _list:
-            _list = {osp.join(osp.normpath(dirpath), '') for dirpath in _list}
-            return any((True if dirpath.startswith(path) else False \
-                        for path in _list))
-        else:
-            return False
-
-    hidden = []
-    
-    for dirpath, dirnames, filenames in os.walk(root_dir):
-        if osp.basename(dirpath).startswith('.'):
-            hidden.append(dirpath)
-        elif not (is_path_in(osp.join(dirpath, ''), exclude) or \
-                  is_path_in(osp.join(dirpath, ''), hidden)):
-            yield dirpath, None, [_file for _file in filenames if not _file.startswith('.')]
-
 def ordered_list(_list):
 
     _set = set()
@@ -290,3 +269,62 @@ def ordered_list(_list):
             new_list.append(item)
 
     return new_list
+
+GlobGlob = namedtuple('GlobGlob', ['dirs', 'files'])
+
+
+def glob_list(root_dir, pattern_list):
+    '''Returns an GlobGlob object'''
+
+    def _glob():
+        for pattern in pattern_list:
+            if pattern:
+                yield glob.glob(osp.join(root_dir, pattern))
+
+    dirs_list = set()
+    files_list = set()
+
+    if pattern_list:
+        for _fileset in _glob(pattern_list):
+            for _file in _fileset:
+                if osp.isdir(_file):
+                    dirs_list.add(_file)
+                else:
+                    files_list.add(_file)
+
+    return GlobGlob(dirs_list, files_list)
+
+def get_file_list(root_dir, exclude_pattern_list, file_ext):
+
+    def is_dirpath_in(dirpath, dir_list):
+        if dir_list:
+            return any(dirpath.startswith(path) for path in dir_list)
+        else:
+            return False
+
+    def os_walk():
+        '''os.walk with directories in exclude_dir_list and
+        hidden (begin with .) are ignored
+        '''
+        exclude = glob_list(root_dir, exclude_pattern_list)
+        
+        hidden_dir_list = []
+
+        for dirpath, dirnames, filenames in os.walk(root_dir):
+            if osp.basename(dirpath).startswith('.'):
+                hidden_dir_list.append(dirpath)
+            elif not (is_dirpath_in(osp.join(dirpath, ''), exclude.dirs) or \
+                      is_dirpath_in(osp.join(dirpath, ''), hidden_dir_list)):
+                filepaths = {osp.normpath(osp.join(dirpath, _file)) \
+                             for _file in filenames \
+                             if not _file.startswith('.') and \
+                             (osp.splitext(_file)[1] == file_ext)}
+                filepaths = filepaths.difference(exclude.files)
+                if filepaths:
+                    yield filepaths
+
+    file_list = set()
+    for filepaths in os_walk():
+        file_list.extend(filepaths)
+    return file_list
+
