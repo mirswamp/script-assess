@@ -332,9 +332,9 @@ class JSHint(SwaTool):
                 artifacts.update(self._tool_conf)
                 assessment_report = osp.join(results_root_dir,
                                              assessment_report_template.format(artifacts['id']))
-                # artifacts['srcfile'] = utillib.filter_file_list(artifacts['srcfile'],
-                #                                                 build_artifacts_helper.get_pkg_dir(),
-                #                                                 jshint_ignore_file)
+                artifacts['srcfile'] = utillib.filter_file_list(artifacts['srcfile'],
+                                                                build_artifacts_helper.get_pkg_dir(),
+                                                                jshint_ignore_file)
                 
                 if 'report-on-stdout' in artifacts \
                    and artifacts['report-on-stdout'] == 'true':

@@ -333,10 +333,11 @@ def filter_file_list(file_list, root_dir, exclude_pattern_list):
     new_file_list = set(file_list).difference(exclude.files)
 
     is_file_in = lambda filepath, dir_list: \
-                 any(dirpath.startswith(osp.join(path, '')) \
-                                        for path in dir_list) \
+                 any(filepath.startswith(osp.join(path, '')) \
+                     for path in dir_list) \
                      if dir_list else False
 
-    new_file_list = {_file for _file in new_file_list \
-                     if not is_file_in(_file, exclude.dirs)}
+    new_file_list = new_file_list.difference({_file for _file in new_file_list \
+                                              if is_file_in(_file, exclude.dirs)})
 
+    return list(new_file_list)
