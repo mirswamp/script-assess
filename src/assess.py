@@ -334,7 +334,7 @@ class JSHint(SwaTool):
                                              assessment_report_template.format(artifacts['id']))
                 artifacts['srcfile'] = utillib.filter_file_list(artifacts['srcfile'],
                                                                 build_artifacts_helper.get_pkg_dir(),
-                                                                jshint_ignore_file)
+                                                                jshint_ignore)
                 
                 if 'report-on-stdout' in artifacts \
                    and artifacts['report-on-stdout'] == 'true':
@@ -347,7 +347,6 @@ class JSHint(SwaTool):
                 errfile = osp.join(results_root_dir,
                                    'swa_tool_stderr{0}.out'.format(artifacts['id']))
 
-                logging.info(artifacts)
                 assess_cmd = gencmd.gencmd(osp.join(self.input_root_dir,
                                                     artifacts['tool-invoke']),
                                            artifacts)
