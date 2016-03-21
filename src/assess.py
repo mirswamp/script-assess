@@ -65,7 +65,8 @@ class BuildArtifactsHelper:
 
         for elem in xml_elem:
             if elem.tag in ['include', 'exclude', 'dependency']:
-                fileset = BuildArtifactsHelper._get_fileset(artifacts['build-root-dir'], elem)
+                fileset = BuildArtifactsHelper._get_fileset(artifacts['build-root-dir'],
+                                                            elem)
                 artifacts[elem.tag] = fileset
 
                 if elem.tag =='include':
@@ -314,13 +315,11 @@ class JSHint(SwaTool):
             self._tool_conf['jshintrc'] = osp.normpath(osp.join(build_artifacts_helper.get_pkg_dir(), '.jshintrc'))
 
         # TODO: read .jshintignore 
-            
+        jshint_ignore_file = None
         if osp.isfile(osp.join(build_artifacts_helper.get_pkg_dir(), '.jshintignore')):
             jshint_ignore_file = osp.normpath(osp.join(build_artifacts_helper.get_pkg_dir(), '.jshintignore'))
             with open(jshint_ignore_file) as fobj:
                 jshint_ignore = {_line.strip('\n') for _line in fobj.readlines()}
-
-                exclude_files = utillib.get_file_list
             
         passed = 0
         failed = 0
@@ -333,7 +332,10 @@ class JSHint(SwaTool):
                 artifacts.update(self._tool_conf)
                 assessment_report = osp.join(results_root_dir,
                                              assessment_report_template.format(artifacts['id']))
-
+                # artifacts['srcfile'] = utillib.filter_file_list(artifacts['srcfile'],
+                #                                                 build_artifacts_helper.get_pkg_dir(),
+                #                                                 jshint_ignore_file)
+                
                 if 'report-on-stdout' in artifacts \
                    and artifacts['report-on-stdout'] == 'true':
                     outfile = assessment_report
@@ -345,6 +347,7 @@ class JSHint(SwaTool):
                 errfile = osp.join(results_root_dir,
                                    'swa_tool_stderr{0}.out'.format(artifacts['id']))
 
+                logging.info(artifacts)
                 assess_cmd = gencmd.gencmd(osp.join(self.input_root_dir,
                                                     artifacts['tool-invoke']),
                                            artifacts)

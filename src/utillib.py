@@ -281,18 +281,18 @@ def glob_list(root_dir, pattern_list):
             if pattern:
                 yield glob.glob(osp.join(root_dir, pattern))
 
-    dirs_list = set()
+    dir_list = set()
     files_list = set()
 
     if pattern_list:
         for _fileset in _glob():
             for _file in _fileset:
                 if osp.isdir(_file):
-                    dirs_list.add(_file)
+                    dir_list.add(osp.normpath(_file))
                 else:
-                    files_list.add(_file)
+                    files_list.add(osp.normpath(_file))
 
-    return GlobGlob(dirs_list, files_list)
+    return GlobGlob(dir_list, files_list)
 
 def get_file_list(root_dir, exclude_pattern_list, file_ext):
 
@@ -325,4 +325,18 @@ def get_file_list(root_dir, exclude_pattern_list, file_ext):
     for filepaths in os_walk():
         file_list.extend(filepaths)
     return file_list
+
+def filter_file_list(file_list, root_dir, exclude_pattern_list):
+
+    exclude = glob_list(root_dir, exclude_pattern_list)
+
+    new_file_list = set(file_list).difference(exclude.files)
+
+    is_file_in = lambda filepath, dir_list: \
+                 any(dirpath.startswith(osp.join(path, '')) \
+                                        for path in dir_list) \
+                     if dir_list else False
+
+    new_file_list = {_file for _file in new_file_list \
+                     if not is_file_in(_file, exclude.dirs)}
 
