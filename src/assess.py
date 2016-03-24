@@ -315,7 +315,7 @@ class JSHint(SwaTool):
             self._tool_conf['jshintrc'] = osp.normpath(osp.join(build_artifacts_helper.get_pkg_dir(), '.jshintrc'))
 
         # TODO: read .jshintignore 
-        jshint_ignore_file = None
+        jshint_ignore = None
         if osp.isfile(osp.join(build_artifacts_helper.get_pkg_dir(), '.jshintignore')):
             jshint_ignore_file = osp.normpath(osp.join(build_artifacts_helper.get_pkg_dir(), '.jshintignore'))
             with open(jshint_ignore_file) as fobj:
