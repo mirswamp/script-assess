@@ -374,7 +374,7 @@ class JSHint(SwaTool):
                                               environ,
                                               results_root_dir,
                                               assessment_report,
-                                              assessment_report,
+                                              outfile,
                                               errfile,
                                               start_time,
                                               utillib.posix_epoch())
@@ -387,6 +387,176 @@ class JSHint(SwaTool):
             return (passed, failed, assessment_summary_file)
 
 
+class JSTool(SwaTool):
+
+    def __init__(self, input_root_dir, tool_root_dir):
+        SwaTool.__init__(self, input_root_dir, tool_root_dir)
+
+    def assess(self, build_summary_file, results_root_dir):
+
+        if not osp.isdir(results_root_dir):
+            os.makedirs(results_root_dir, exist_ok=True)
+
+        assessment_summary_file = osp.join(results_root_dir, 'assessment_summary.xml')
+
+        if 'assessment-report-template' in self._tool_conf:
+            assessment_report_template = self._tool_conf['assessment-report-template']
+        else:
+            assessment_report_template = 'assessment_report{0}.xml'
+
+        build_artifacts_helper = BuildArtifactsHelper(build_summary_file)
+
+        passed = 0
+        failed = 0
+        with AssessmentSummary(assessment_summary_file,
+                               build_artifacts_helper,
+                               self._tool_conf) as assessment_summary:
+
+            for artifacts in build_artifacts_helper.get_build_artifacts('ruby-src'):
+
+                artifacts.update(self._tool_conf)
+                assessment_report = osp.join(results_root_dir,
+                                             assessment_report_template.format(artifacts['id']))
+
+                if 'report-on-stdout' in artifacts \
+                   and artifacts['report-on-stdout'] == 'true':
+                    outfile = assessment_report
+                else:
+                    artifacts['assessment-report'] = assessment_report
+                    outfile = osp.join(results_root_dir,
+                                       'swa_tool_stdout{0}.out'.format(artifacts['id']))
+
+                errfile = osp.join(results_root_dir,
+                                   'swa_tool_stderr{0}.out'.format(artifacts['id']))
+
+                assess_cmd = gencmd.gencmd(osp.join(self.input_root_dir,
+                                                    artifacts['tool-invoke']),
+                                           artifacts)
+
+
+                logging.info('ASSESSMENT CMD: %s', assess_cmd)
+
+                start_time = utillib.posix_epoch()
+                exit_code, environ = utillib.run_cmd(assess_cmd,
+                                                     outfile=outfile,
+                                                     errfile=errfile,
+                                                     cwd=results_root_dir,
+                                                     #env=dict(os.environ))
+                                                     env=self._get_env())
+
+                logging.info('ASSESSMENT WORKING DIR: %s', results_root_dir)
+                logging.info('ASSESSMENT EXIT CODE: %d', exit_code)
+                logging.info('ASSESSMENT ENVIRONMENT: %s', environ)
+                
+                #write assessment summary file
+                #return pass, fail, assessment_summary
+                assessment_summary.add_report(artifacts['id'],
+                                              assess_cmd,
+                                              exit_code,
+                                              environ,
+                                              results_root_dir,
+                                              assessment_report,
+                                              outfile,
+                                              errfile,
+                                              start_time,
+                                              utillib.posix_epoch())
+
+                if self._validate_exit_code(exit_code):
+                    passed += 1
+                else:
+                    failed += 1
+
+            return (passed, failed, assessment_summary_file)
+
+
+class Flow(SwaTool):
+
+    def __init__(self, input_root_dir, tool_root_dir):
+        SwaTool.__init__(self, input_root_dir, tool_root_dir)
+
+    def assess(self, build_summary_file, results_root_dir):
+
+        if not osp.isdir(results_root_dir):
+            os.makedirs(results_root_dir, exist_ok=True)
+
+        assessment_summary_file = osp.join(results_root_dir, 'assessment_summary.xml')
+
+        if 'assessment-report-template' in self._tool_conf:
+            assessment_report_template = self._tool_conf['assessment-report-template']
+        else:
+            assessment_report_template = 'assessment_report{0}.xml'
+
+        build_artifacts_helper = BuildArtifactsHelper(build_summary_file)
+
+        passed = 0
+        failed = 0
+        with AssessmentSummary(assessment_summary_file,
+                               build_artifacts_helper,
+                               self._tool_conf) as assessment_summary:
+
+            artifacts = {'id': 1}
+
+            artifacts.update(self._tool_conf)
+            assessment_report = osp.join(results_root_dir,
+                                         assessment_report_template.format(artifacts['id']))
+
+            if 'report-on-stdout' in artifacts \
+               and artifacts['report-on-stdout'] == 'true':
+                outfile = assessment_report
+            else:
+                artifacts['assessment-report'] = assessment_report
+                outfile = osp.join(results_root_dir,
+                                   'swa_tool_stdout{0}.out'.format(artifacts['id']))
+
+            errfile = osp.join(results_root_dir,
+                               'swa_tool_stderr{0}.out'.format(artifacts['id']))
+
+            assess_cmd = gencmd.gencmd(osp.join(self.input_root_dir,
+                                                artifacts['tool-invoke']),
+                                       artifacts)
+
+
+            logging.info('ASSESSMENT CMD: %s', assess_cmd)
+            assessment_working_dir = build_artifacts_helper.get_pkg_dir()
+            
+            start_time = utillib.posix_epoch()
+
+            if not osp.isfile(osp.join(assessment_working_dir, '.flowconfig')):
+                utillib.run_cmd('%s init' % (artifacts['executable']),
+                                cwd=assessment_working_dir,
+                                env=self._get_env())
+
+            exit_code, environ = utillib.run_cmd(assess_cmd,
+                                                 outfile=outfile,
+                                                 errfile=errfile,
+                                                 cwd=assessment_working_dir,
+                                                 env=self._get_env())
+
+            logging.info('ASSESSMENT WORKING DIR: %s', assessment_working_dir)
+            logging.info('ASSESSMENT EXIT CODE: %d', exit_code)
+            logging.info('ASSESSMENT ENVIRONMENT: %s', environ)
+
+            #write assessment summary file
+            #return pass, fail, assessment_summary
+            assessment_summary.add_report(artifacts['id'],
+                                          assess_cmd,
+                                          exit_code,
+                                          environ,
+                                          assessment_working_dir,
+                                          assessment_report,
+                                          outfile,
+                                          errfile,
+                                          start_time,
+                                          utillib.posix_epoch())
+
+            if self._validate_exit_code(exit_code):
+                passed += 1
+            else:
+                failed += 1
+
+        return (passed, failed, assessment_summary_file)
+
+
 def assess(input_root_dir, output_root_dir, tool_root_dir,
            results_root_dir, build_summary_file):
 
@@ -395,8 +565,10 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
 
     if tool_conf['tool-type'] == 'jshint':
         swatool = JSHint(input_root_dir, tool_root_dir)
+    elif tool_conf['tool-type'] == 'flow':
+        swatool = Flow(input_root_dir, tool_root_dir)
     else:
-        raise NotImplementedError
+        swatool = JSTool(input_root_dir, tool_root_dir)
         
     try:
         with LogTaskStatus('assess') as status_dot_out:
