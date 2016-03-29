@@ -294,7 +294,7 @@ def glob_list(root_dir, pattern_list):
 
     return GlobGlob(dir_list, files_list)
 
-def get_file_list(root_dir, exclude_pattern_list, file_ext):
+def get_file_list(root_dir, exclude_pattern_list, file_ext_list):
 
     is_dirpath_in = lambda dirpath, dir_list: \
                     any(dirpath.startswith(path) for path in dir_list) \
@@ -316,7 +316,7 @@ def get_file_list(root_dir, exclude_pattern_list, file_ext):
                 filepaths = {osp.normpath(osp.join(dirpath, _file)) \
                              for _file in filenames \
                              if not _file.startswith('.') and \
-                             (osp.splitext(_file)[1] == file_ext)}
+                             (osp.splitext(_file)[1] in file_ext_list)}
                 filepaths = filepaths.difference(exclude.files)
                 if filepaths:
                     yield filepaths

@@ -137,21 +137,34 @@ class BuildSummaryJavascript(BuildSummary):
         BuildSummary._add(self._root, 'package-dir', pkg_conf['package-dir'])
         self.build_root_dir = build_root_dir
 
-    def add_build_artifacts(self, include):
+    def _add_file_set(self, parent_xml, xml_tag, fileset, ):
+        xml_elem = BuildSummary._add(parent_xml, xml_tag)
+        for _file in fileset:
+            BuildSummary._add(xml_elem, 'file',
+                              osp.relpath(_file, self.build_root_dir))
+        
+    def add_build_artifacts(self, fileset):
 
         build_artifacts_xml = BuildSummary._add(self._root, 'build-artifacts')
-        ruby_gem_xml = BuildSummary._add(build_artifacts_xml, 'ruby-src')
+        web_xml = BuildSummary._add(build_artifacts_xml, 'web-src')
 
+        self._add_file_set(web_xml, 'javascript',
+                           [_file for _file in fileset \
+                            if osp.splitext(_file)[1] == '.js'])
 
-        ruby_src_xml = BuildSummary._add(ruby_gem_xml, 'include')
-        for _file in include:
-            filepath = osp.relpath(_file, self.build_root_dir)
-            BuildSummary._add(ruby_src_xml, 'file', filepath)
+        self._add_file_set(web_xml, 'html',
+                           [_file for _file in fileset \
+                            if osp.splitext(_file)[1] == '.html'])
+
+        self._add_file_set(web_xml, 'css',
+                           [_file for _file in fileset \
+                            if osp.splitext(_file)[1] == '.css'])
 
 
 class JsPkg:
 
     PKG_ROOT_DIRNAME = "pkg1"
+    WEB_FILE_TYPES = ['.js', '.html', '.css']
 
     @classmethod
     def get_env(cls, pwd):
@@ -270,13 +283,13 @@ class JsNodePkg(JsPkg):
                 for _file in [osp.join(pkg_dir, f) \
                               for f in pkg_json['files']]:
                     if osp.isdir(_file):
-                        fileset.update(utillib.get_file_list(_file, None, '.js'))
+                        fileset.update(utillib.get_file_list(_file, None, JsPkg.WEB_FILE_TYPES))
                     else:
                         fileset.add(_file)
             else:
                 
                 fileset.update(utillib.get_file_list(pkg_dir,
-                                                     npm_ignore_list(), '.js'))
+                                                     npm_ignore_list(), JsPkg.WEB_FILE_TYPES))
 
         return fileset
 
@@ -289,7 +302,7 @@ class JsNodePkg(JsPkg):
         if osp.isfile(osp.join(pkg_dir, 'package.json')):
             fileset = cls.get_nodejs_files(pkg_dir)
         else:
-            fileset.update(utillib.get_file_list(pkg_dir, None, '.js'))
+            fileset.update(utillib.get_file_list(pkg_dir, None, JsPkg.WEB_FILE_TYPES))
 
         fileset = fileset.difference(exclude.files)
 
@@ -319,12 +332,6 @@ class JsNodePkg(JsPkg):
                 outfile = osp.join(build_root_dir, 'build_stdout.out')
                 errfile = osp.join(build_root_dir, 'build_stderr.err')
 
-                # (exit_code, environ) = RubyPkg.run_cmd(build_cmd,
-                #                                        pkg_build_dir,
-                #                                        outfile,
-                #                                        errfile,
-                #                                        'rake')
-
                 exit_code, environ = 0, dict(os.environ)
                 
                 build_summary.add_command('rake', build_cmd,
@@ -339,17 +346,17 @@ class JsNodePkg(JsPkg):
                                              osp.relpath(outfile, build_root_dir),
                                              osp.relpath(errfile, build_root_dir))
 
-                include = JsNodePkg.get_js_files(pkg_build_dir,
+                fileset = JsNodePkg.get_js_files(pkg_build_dir,
                                                  self.pkg_conf.get('package-exclude-paths', ''))
 
-                if len(include) == 0:
+                if len(fileset) == 0:
                     err = EmptyPackageError(osp.basename(self.pkg_dir),
                                             BuildSummary.FILENAME)
                     build_summary.add_exit_code(err.exit_code)
                     raise err
                 else:
                     build_summary.add_exit_code(0)
-                    build_summary.add_build_artifacts(include)
+                    build_summary.add_build_artifacts(fileset)
                     return (0, BuildSummary.FILENAME)
 
 
@@ -357,15 +364,15 @@ def get_pkg_obj(pkg_conf_file, input_root_dir, build_root_dir):
 
     pkg_conf = confreader.read_conf_into_dict(pkg_conf_file)
 
-    ruby_pkg_types = {
+    web_pkg_types = {
         'node-js' : JsNodePkg,
         'no-build' : JsNodePkg,
     }
 
     build_sys = pkg_conf['build-sys']
 
-    if build_sys in ruby_pkg_types.keys():
-        return ruby_pkg_types[build_sys](pkg_conf_file, input_root_dir, build_root_dir)
+    if build_sys in web_pkg_types.keys():
+        return web_pkg_types[build_sys](pkg_conf_file, input_root_dir, build_root_dir)
     else:
         raise NotImplementedError("Unknown build system '{0}'".format(build_sys))
 
