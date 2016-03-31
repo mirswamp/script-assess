@@ -61,17 +61,17 @@ class BuildArtifactsHelper:
     @classmethod
     def get_artifacts(cls, _id, build_summary, xml_elem):
         artifacts = dict(build_summary)
+
         artifacts['id'] = _id
+        artifacts['srcfile'] = list()
 
         for elem in xml_elem:
-            if elem.tag in ['include', 'exclude', 'dependency']:
+            if elem.tag in ['javascript', 'html', 'css']:
                 fileset = BuildArtifactsHelper._get_fileset(artifacts['build-root-dir'],
                                                             elem)
                 artifacts[elem.tag] = fileset
-
-                if elem.tag =='include':
-                    artifacts['srcfile'] = fileset
-                
+                artifacts['srcfile'].extend(fileset)
+                    
         return artifacts
 
     @classmethod
@@ -80,7 +80,6 @@ class BuildArtifactsHelper:
         return {elem.tag:elem.text for elem in root \
                 if(elem.tag not in ['package-conf',\
                                     'command', 'build-artifacts',\
-                                    'gem-install', 'gem-unpack', \
                                     'build-command'])}
 
     def __init__(self, build_summary_file):
@@ -128,7 +127,7 @@ class BuildArtifactsHelper:
         count = 1
 
         for elem in self._build_artifacts:
-            if (elem.tag == 'ruby-src') and (elem.tag in args):
+            if (elem.tag == 'web-src') and (elem.tag in args):
                 yield BuildArtifactsHelper.get_artifacts(count,
                                                          self._build_summary,
                                                          elem)
@@ -327,7 +326,7 @@ class JSHint(SwaTool):
                                build_artifacts_helper,
                                self._tool_conf) as assessment_summary:
 
-            for artifacts in build_artifacts_helper.get_build_artifacts('ruby-src'):
+            for artifacts in build_artifacts_helper.get_build_artifacts('web-src'):
 
                 artifacts.update(self._tool_conf)
                 assessment_report = osp.join(results_root_dir,
@@ -412,7 +411,7 @@ class JSTool(SwaTool):
                                build_artifacts_helper,
                                self._tool_conf) as assessment_summary:
 
-            for artifacts in build_artifacts_helper.get_build_artifacts('ruby-src'):
+            for artifacts in build_artifacts_helper.get_build_artifacts('web-src'):
 
                 artifacts.update(self._tool_conf)
                 assessment_report = osp.join(results_root_dir,

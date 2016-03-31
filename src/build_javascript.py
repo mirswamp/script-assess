@@ -27,7 +27,7 @@ class EmptyPackageError(Exception):
         self.exit_code = 2
 
     def __str__(self):
-        return "No files with '.rb' extenstion found in %s" % self.pkg_dir
+        return "No files with '.js' or '.html' or '.css' extenstion found in %s" % self.pkg_dir
 
 
 class CommandFailedError(Exception):
@@ -296,7 +296,7 @@ class JsNodePkg(JsPkg):
     @classmethod
     def get_js_files(cls, pkg_dir, exclude_filter):
 
-        exclude = utillib.glob_list(pkg_dir, exclude_filter.split(','))
+        file_filters = utillib.get_file_filters(pkg_dir, exclude_filter.split(','))
 
         fileset = set()
         if osp.isfile(osp.join(pkg_dir, 'package.json')):
@@ -304,10 +304,10 @@ class JsNodePkg(JsPkg):
         else:
             fileset.update(utillib.get_file_list(pkg_dir, None, JsPkg.WEB_FILE_TYPES))
 
-        fileset = fileset.difference(exclude.files)
+        fileset = fileset.difference(file_filters.exclude_files)
 
         fileset = fileset.difference(_file for _file in fileset \
-                                     for exdir in exclude.dirs \
+                                     for exdir in file_filters.exclude_dirs \
                                      if _file.startswith(osp.join(exdir, '')))
 
         return fileset

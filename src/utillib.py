@@ -154,9 +154,9 @@ def run_cmd(cmd,
 
 def os_path_join(basepath, subdir):
     if subdir.startswith('/'):
-        return osp.join(basepath, subdir[1:])
+        return osp.normpath(osp.join(basepath, subdir[1:]))
     else:
-        return osp.join(basepath, subdir)
+        return osp.normpath(osp.join(basepath, subdir))
 
 def glob_glob(path, pattern):
     return glob.glob(os_path_join(path, pattern))
@@ -270,67 +270,124 @@ def ordered_list(_list):
 
     return new_list
 
-GlobGlob = namedtuple('GlobGlob', ['dirs', 'files'])
+######
+    
+FileFilters = namedtuple('FileFilters', ['exclude_dirs', 'exclude_files', \
+                                         'include_dirs', 'include_files'])
 
+def expand_patterns(root_dir, pattern_list):
+    for pattern in pattern_list:
+        if '**' in pattern:
+            head, _, tail = pattern.partition('**')
+            tail = tail[1:] if tail.startswith('/') else tail
+            if tail in ['', '*.*', '*']:
+                yield glob_glob(root_dir, head)
+            else:
+                for dirpath, _, _ in os.walk(os_path_join(root_dir, head)):
+                    yield glob_glob(dirpath, tail)
+        else:
+            yield glob_glob(root_dir, pattern)
 
-def glob_list(root_dir, pattern_list):
-    '''Returns an GlobGlob object'''
+def get_file_filters(root_dir, patterns):
+    '''Returns an FileFilters object'''
 
-    def _glob():
-        for pattern in pattern_list:
-            if pattern:
-                yield glob.glob(osp.join(root_dir, pattern))
+    '''patterns is expected to be a list or filepath'''
+    if isinstance(patterns, str):
+        with open(patterns) as fobj:
+            patterns = [p for p in fobj]
+    elif patterns is None:
+        patterns = []
 
-    dir_list = set()
-    files_list = set()
+    patterns = [p.strip().strip('\n') for p in patterns \
+                if not p.strip().startswith('#') and not p.isspace() and p]
 
-    if pattern_list:
-        for _fileset in _glob():
-            for _file in _fileset:
+    ex_dir_list = set()
+    ex_file_list = set()
+
+    for fileset in expand_patterns(root_dir, (p for p in patterns \
+                                              if not p.startswith('!'))):
+        if fileset:
+            for _file in fileset:
                 if osp.isdir(_file):
-                    dir_list.add(osp.normpath(_file))
+                    ex_dir_list.add(osp.normpath(_file))
                 else:
-                    files_list.add(osp.normpath(_file))
+                    ex_file_list.add(osp.normpath(_file))
+    
+    in_dir_list = set()
+    in_file_list = set()
 
-    return GlobGlob(dir_list, files_list)
+    for fileset in expand_patterns(root_dir, (p[1:] for p in patterns \
+                                              if p.startswith('!'))):
+        if fileset:
+            for _file in fileset:
+                if osp.isdir(_file):
+                    in_dir_list.add(osp.normpath(_file))
+                else:
+                    in_file_list.add(osp.normpath(_file))
 
-def get_file_list(root_dir, exclude_pattern_list, file_ext_list):
+    return FileFilters(ex_dir_list, ex_file_list, in_dir_list, in_file_list)
+
+def filter_out(root_dir, file_filters, file_types):
+    '''
+    This is a generator function.
+    os.walk with directories in file_filters.exclude_dirs and
+    file_filters.exclude_files and hidden (begin with .) are ignored
+    '''
 
     is_dirpath_in = lambda dirpath, dir_list: \
                     any(dirpath.startswith(path) for path in dir_list) \
                     if dir_list else False
 
-    def os_walk():
-        '''os.walk with directories in exclude_dir_list and
-        hidden (begin with .) are ignored
-        '''
-        exclude = glob_list(root_dir, exclude_pattern_list)
-        
-        hidden_dir_list = []
+    hidden_dir_list = []
 
-        for dirpath, dirnames, filenames in os.walk(root_dir):
-            if osp.basename(dirpath).startswith('.'):
-                hidden_dir_list.append(dirpath)
-            elif not (is_dirpath_in(osp.join(dirpath, ''), exclude.dirs) or \
-                      is_dirpath_in(osp.join(dirpath, ''), hidden_dir_list)):
-                filepaths = {osp.normpath(osp.join(dirpath, _file)) \
-                             for _file in filenames \
-                             if not _file.startswith('.') and \
-                             (osp.splitext(_file)[1] in file_ext_list)}
-                filepaths = filepaths.difference(exclude.files)
-                if filepaths:
-                    yield filepaths
+    for dirpath, dirnames, filenames in os.walk(root_dir):
 
+        if osp.basename(dirpath).startswith('.'):
+            hidden_dir_list.append(dirpath)
+        elif not (is_dirpath_in(osp.join(dirpath, ''), file_filters.exclude_dirs) or \
+                  is_dirpath_in(osp.join(dirpath, ''), hidden_dir_list)):
+            filepaths = {osp.normpath(osp.join(dirpath, _file)) \
+                         for _file in filenames \
+                         if not _file.startswith('.') and \
+                         (osp.splitext(_file)[1] in file_types)}
+            filepaths = filepaths.difference(file_filters.exclude_files)
+            if filepaths:
+                for _file in filepaths:
+                    yield _file
+
+
+def filter_in(root_dir, file_filters, file_types):
+    '''
+    This is a generator function.
+    '''
+
+    
+    for include_dir in file_filters.include_dirs:
+        for dirpath, dirnames, filenames in os.walk(include_dir):
+            for _file in filenames:
+                if osp.splitext(_file)[1] in file_types:
+                    yield osp.join(dirpath, _file)
+
+    for _file in file_filters.include_files:
+        if osp.isfile(_file) and \
+           osp.splitext(_file)[1] in file_types:
+            yield _file
+
+def get_file_list(root_dir, patterns, file_types):
+
+    file_filters = get_file_filters(root_dir, patterns)
+    
     file_list = list()
-    for filepaths in os_walk():
-        file_list.extend(filepaths)
+    file_list.extend(filter_out(root_dir, file_filters, file_types))
+    file_list.extend(filter_in(root_dir, file_filters, file_types))
+    
     return file_list
 
-def filter_file_list(file_list, root_dir, exclude_pattern_list):
+def filter_file_list(file_list, root_dir, patterns):
 
-    exclude = glob_list(root_dir, exclude_pattern_list)
+    file_filters = get_file_filters(root_dir, patterns)
 
-    new_file_list = set(file_list).difference(exclude.files)
+    new_file_list = set(file_list).difference(file_filters.exclude_files)
 
     is_file_in = lambda filepath, dir_list: \
                  any(filepath.startswith(osp.join(path, '')) \
@@ -338,6 +395,13 @@ def filter_file_list(file_list, root_dir, exclude_pattern_list):
                      if dir_list else False
 
     new_file_list = new_file_list.difference({_file for _file in new_file_list \
-                                              if is_file_in(_file, exclude.dirs)})
+                                              if is_file_in(_file, file_filters.exclude_dirs)})
 
     return list(new_file_list)
+
+
+if __name__ == '__main__':
+    for _file in get_file_list(sys.argv[1],
+                               osp.join(sys.argv[1], '.npmignore'),
+                               ['.js', '.html', '.css']):
+        print(_file)
