@@ -298,8 +298,8 @@ def get_file_filters(root_dir, patterns):
     elif patterns is None:
         patterns = []
 
-    patterns = [p.strip().strip('\n') for p in patterns \
-                if not p.strip().startswith('#') and not p.isspace() and p]
+    patterns = {p.strip().strip('\n') for p in patterns \
+                if p and not p.isspace() and not p.strip().startswith('#')}
 
     ex_dir_list = set()
     ex_file_list = set()

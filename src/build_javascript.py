@@ -264,9 +264,17 @@ class JsNodePkg(JsPkg):
     def get_nodejs_files(cls, pkg_dir):
 
         def npm_ignore_list():
+            ignore_file = None
+
             if osp.isfile(osp.join(pkg_dir, '.npmignore')):
-                with open(osp.join(pkg_dir, '.npmignore')) as fobj:
-                    ignore_patterns = {_line.strip('\n') for _line in fobj.readlines()}
+                ignore_file = osp.join(pkg_dir, '.npmignore')
+            elif osp.isfile(osp.join(pkg_dir, '.gitignore')):
+                ignore_file = osp.join(pkg_dir, '.gitignore')
+
+            if ignore_file:
+                with open(ignore_file) as fobj:
+                    ignore_patterns = {p.strip().strip('\n') for p in fobj \
+                                       if p and not p.isspace() and not p.strip().startswith('#')}
                     ignore_patterns.add('node_modules')
                     return ignore_patterns
 
