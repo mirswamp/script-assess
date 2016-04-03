@@ -238,6 +238,9 @@ class SwaTool:
         self._tool_conf = {key: utillib.expandvar(self._tool_conf[key], self._tool_conf) \
                            for key in self._tool_conf}
 
+        if 'assessment-report-template' not in self._tool_conf:
+            self._tool_conf['assessment-report-template'] = 'assessment_report{0}.xml'
+
         self._unarchive(input_root_dir, tool_root_dir)
         self._install(tool_root_dir)
 
@@ -303,11 +306,6 @@ class JSHint(SwaTool):
 
         assessment_summary_file = osp.join(results_root_dir, 'assessment_summary.xml')
 
-        if 'assessment-report-template' in self._tool_conf:
-            assessment_report_template = self._tool_conf['assessment-report-template']
-        else:
-            assessment_report_template = 'assessment_report{0}.xml'
-
         build_artifacts_helper = BuildArtifactsHelper(build_summary_file)
 
         if osp.isfile(osp.join(build_artifacts_helper.get_pkg_dir(), '.jshintrc')):
@@ -330,7 +328,7 @@ class JSHint(SwaTool):
 
                 artifacts.update(self._tool_conf)
                 assessment_report = osp.join(results_root_dir,
-                                             assessment_report_template.format(artifacts['id']))
+                                             artifacts['assessment-report-template'].format(artifacts['id']))
                 artifacts['srcfile'] = utillib.filter_file_list(artifacts['srcfile'],
                                                                 build_artifacts_helper.get_pkg_dir(),
                                                                 jshint_ignore)
@@ -390,6 +388,75 @@ class JSTool(SwaTool):
 
     def __init__(self, input_root_dir, tool_root_dir):
         SwaTool.__init__(self, input_root_dir, tool_root_dir)
+    
+    def _split_build_artifacts(self, artifacts):
+        '''Splits only if required'''
+
+        #returns list of list
+        split_required, max_allowed_size = self._split_artifacts_required(artifacts)
+        if split_required:
+            split_file_lists = list()
+            file_type = 'javascript'
+
+            self._split_list(split_file_lists,
+                             artifacts[file_type],
+                             max_allowed_size)
+
+            artifacts.pop('javascript')
+            artifacts_list = list()
+
+            id_count = 1
+            for filelist in split_file_lists:
+                new_artifacts = dict(artifacts)
+                new_artifacts['javascript'] = filelist
+                new_artifacts['build-artifact-id'] = '{0}-{1}'.format(new_artifacts['id'], str(id_count))
+                new_artifacts['assessment-report'] = osp.join(new_artifacts['results-root-dir'],
+                                                              self._tool_conf['assessment-report-template'].format(new_artifacts['build-artifact-id']))
+                id_count += 1
+                artifacts_list.append(new_artifacts)
+
+            return artifacts_list
+        else:
+            return [artifacts]
+
+    def _split_artifacts_required(self, artifacts):
+        '''returns a tuple with key in attribute and an integer corresponding
+        to the size '''
+        artifacts_local = dict(artifacts)
+        get_cmd_size = lambda invoke_file, _dict: \
+                       len(' '.join(gencmd.gencmd(invoke_file, _dict)))
+
+        tool_invoke_file = osp.join(self.input_root_dir,
+                                    artifacts['tool-invoke'])
+        
+        if get_cmd_size(tool_invoke_file, artifacts_local) > utillib.max_cmd_size():
+            file_type = 'javascript'
+            artifacts_local.pop(file_type)
+            max_allowed_size = utillib.max_cmd_size() - get_cmd_size(tool_invoke_file,
+                                                                     artifacts_local)
+            return (True, max_allowed_size)
+        else:
+            return (False, 0)
+
+
+    def _split_list(self, llist, filelist, max_args_size):
+        if len(' '.join(filelist)) > max_args_size:
+            self._split_list(llist, filelist[0:int(len(filelist)/2)], max_args_size)
+            self._split_list(llist, filelist[int(len(filelist)/2):], max_args_size)
+        else:
+            llist.append(filelist)
+
+    def _get_build_artifacts(self, build_artifacts_helper, results_root_dir):
+
+        for artifacts in build_artifacts_helper.get_build_artifacts('web-src'):
+            artifacts['build-artifact-id'] = artifacts['id']
+            artifacts['results-root-dir'] = results_root_dir
+            artifacts.update(self._tool_conf)
+            artifacts['assessment-report'] = osp.join(artifacts['results-root-dir'],
+                                                      artifacts['assessment-report-template'].format(artifacts['build-artifact-id']))
+
+            for new_artifacts in self._split_build_artifacts(artifacts):
+                yield new_artifacts
 
     def assess(self, build_summary_file, results_root_dir):
 
@@ -397,11 +464,6 @@ class JSTool(SwaTool):
             os.makedirs(results_root_dir, exist_ok=True)
 
         assessment_summary_file = osp.join(results_root_dir, 'assessment_summary.xml')
-
-        if 'assessment-report-template' in self._tool_conf:
-            assessment_report_template = self._tool_conf['assessment-report-template']
-        else:
-            assessment_report_template = 'assessment_report{0}.xml'
 
         build_artifacts_helper = BuildArtifactsHelper(build_summary_file)
 
@@ -411,27 +473,22 @@ class JSTool(SwaTool):
                                build_artifacts_helper,
                                self._tool_conf) as assessment_summary:
 
-            for artifacts in build_artifacts_helper.get_build_artifacts('web-src'):
-
-                artifacts.update(self._tool_conf)
-                assessment_report = osp.join(results_root_dir,
-                                             assessment_report_template.format(artifacts['id']))
+            for artifacts in self._get_build_artifacts(build_artifacts_helper, \
+                                                       results_root_dir):
 
                 if 'report-on-stdout' in artifacts \
                    and artifacts['report-on-stdout'] == 'true':
-                    outfile = assessment_report
+                    outfile = artifacts['assessment-report']
                 else:
-                    artifacts['assessment-report'] = assessment_report
                     outfile = osp.join(results_root_dir,
-                                       'swa_tool_stdout{0}.out'.format(artifacts['id']))
+                                       'swa_tool_stdout{0}.out'.format(artifacts['build-artifact-id']))
 
                 errfile = osp.join(results_root_dir,
-                                   'swa_tool_stderr{0}.out'.format(artifacts['id']))
+                                   'swa_tool_stderr{0}.out'.format(artifacts['build-artifact-id']))
 
                 assess_cmd = gencmd.gencmd(osp.join(self.input_root_dir,
                                                     artifacts['tool-invoke']),
                                            artifacts)
-
 
                 logging.info('ASSESSMENT CMD: %s', assess_cmd)
 
@@ -440,16 +497,18 @@ class JSTool(SwaTool):
                                                      outfile=outfile,
                                                      errfile=errfile,
                                                      cwd=results_root_dir,
-                                                     #env=dict(os.environ))
                                                      env=self._get_env())
 
                 logging.info('ASSESSMENT WORKING DIR: %s', results_root_dir)
                 logging.info('ASSESSMENT EXIT CODE: %d', exit_code)
                 logging.info('ASSESSMENT ENVIRONMENT: %s', environ)
-                
+
+                assessment_report = artifacts['assessment-report'] \
+                                    if outfile != artifacts['assessment-report'] else \
+                                       outfile
                 #write assessment summary file
                 #return pass, fail, assessment_summary
-                assessment_summary.add_report(artifacts['id'],
+                assessment_summary.add_report(artifacts['build-artifact-id'],
                                               assess_cmd,
                                               exit_code,
                                               environ,
@@ -480,11 +539,6 @@ class Flow(SwaTool):
 
         assessment_summary_file = osp.join(results_root_dir, 'assessment_summary.xml')
 
-        if 'assessment-report-template' in self._tool_conf:
-            assessment_report_template = self._tool_conf['assessment-report-template']
-        else:
-            assessment_report_template = 'assessment_report{0}.xml'
-
         build_artifacts_helper = BuildArtifactsHelper(build_summary_file)
 
         passed = 0
@@ -497,7 +551,7 @@ class Flow(SwaTool):
 
             artifacts.update(self._tool_conf)
             assessment_report = osp.join(results_root_dir,
-                                         assessment_report_template.format(artifacts['id']))
+                                         artifacts['assessment-report-template'].format(artifacts['id']))
 
             if 'report-on-stdout' in artifacts \
                and artifacts['report-on-stdout'] == 'true':
@@ -516,6 +570,8 @@ class Flow(SwaTool):
 
 
             logging.info('ASSESSMENT CMD: %s', assess_cmd)
+            
+            #For Flow package dir is assessment working dir
             assessment_working_dir = build_artifacts_helper.get_pkg_dir()
             
             start_time = utillib.posix_epoch()
