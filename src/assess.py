@@ -244,7 +244,7 @@ class SwaTool:
         self._unarchive(input_root_dir, tool_root_dir)
         self._install(tool_root_dir)
 
-        logging.info('TOOL CONF: %s', self._tool_conf)
+        #logging.info('TOOL CONF: %s', self._tool_conf)
 
     def _unarchive(self, input_root_dir, tool_root_dir):
 
@@ -388,7 +388,7 @@ class JSTool(SwaTool):
 
     def __init__(self, input_root_dir, tool_root_dir):
         SwaTool.__init__(self, input_root_dir, tool_root_dir)
-    
+        
     def _split_build_artifacts(self, artifacts):
         '''Splits only if required'''
 
@@ -458,15 +458,27 @@ class JSTool(SwaTool):
             for new_artifacts in self._split_build_artifacts(artifacts):
                 yield new_artifacts
 
+    def _set_tool_config(self, pkg_dir):
+        
+        if self._tool_conf.get('tool-config-required', None) == 'true':
+            if 'tool-config-file' in self._tool_conf and \
+               osp.isfile(osp.join(pkg_dir, self._tool_conf['tool-config-file'])):
+                # Make the path absolute
+                self._tool_conf['tool-config-file'] = osp.normpath(osp.join(pkg_dir,
+                                                                            self._tool_conf['tool-config-file']))
+            else:
+               self._tool_conf['tool-config-file'] = self._tool_conf['tool-default-config-file']
+                
     def assess(self, build_summary_file, results_root_dir):
 
         if not osp.isdir(results_root_dir):
             os.makedirs(results_root_dir, exist_ok=True)
 
         assessment_summary_file = osp.join(results_root_dir, 'assessment_summary.xml')
-
         build_artifacts_helper = BuildArtifactsHelper(build_summary_file)
-
+        self._set_tool_config(build_artifacts_helper.get_pkg_dir())
+        logging.info('TOOL CONF: %s', self._tool_conf)
+        
         passed = 0
         failed = 0
         with AssessmentSummary(assessment_summary_file,
@@ -618,9 +630,10 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
     tool_conf_file = osp.join(input_root_dir, SwaTool.TOOL_DOT_CONF)
     tool_conf = confreader.read_conf_into_dict(tool_conf_file)
 
-    if tool_conf['tool-type'] == 'jshint':
-        swatool = JSHint(input_root_dir, tool_root_dir)
-    elif tool_conf['tool-type'] == 'flow':
+    #if tool_conf['tool-type'] == 'jshint':
+    #    swatool = JSHint(input_root_dir, tool_root_dir)
+    #elif tool_conf['tool-type'] == 'flow':
+    if tool_conf['tool-type'] == 'flow':
         swatool = Flow(input_root_dir, tool_root_dir)
     else:
         swatool = JSTool(input_root_dir, tool_root_dir)
