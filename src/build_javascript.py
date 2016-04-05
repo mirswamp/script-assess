@@ -148,17 +148,23 @@ class BuildSummaryJavascript(BuildSummary):
         build_artifacts_xml = BuildSummary._add(self._root, 'build-artifacts')
         web_xml = BuildSummary._add(build_artifacts_xml, 'web-src')
 
-        self._add_file_set(web_xml, 'javascript',
-                           [_file for _file in fileset \
-                            if osp.splitext(_file)[1] == '.js'])
+        js_fileset = [_file for _file in fileset \
+                      if osp.splitext(_file)[1] == '.js']
 
-        self._add_file_set(web_xml, 'html',
-                           [_file for _file in fileset \
-                            if osp.splitext(_file)[1] == '.html'])
+        if js_fileset:
+            self._add_file_set(web_xml, 'javascript', js_fileset)
 
-        self._add_file_set(web_xml, 'css',
-                           [_file for _file in fileset \
-                            if osp.splitext(_file)[1] == '.css'])
+        html_fileset = [_file for _file in fileset \
+                        if osp.splitext(_file)[1] in ['.htm', '.html']]
+        
+        if html_fileset:
+            self._add_file_set(web_xml, 'html', html_fileset)
+
+        css_fileset = [_file for _file in fileset \
+                       if osp.splitext(_file)[1] == '.css']
+
+        if css_fileset:
+            self._add_file_set(web_xml, 'css', css_fileset)
 
 
 class JsPkg:
