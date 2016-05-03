@@ -27,7 +27,7 @@ class EmptyPackageError(Exception):
         self.exit_code = 2
 
     def __str__(self):
-        return "No files with '.js' or '.html' or '.css' extenstion found in %s" % self.pkg_dir
+        return "No files with '.js', '.html', '.css' or '.xml' extenstion found in %s" % self.pkg_dir
 
 
 class CommandFailedError(Exception):
@@ -167,10 +167,16 @@ class BuildSummaryJavascript(BuildSummary):
             self._add_file_set(web_xml, 'css', css_fileset)
 
 
+        xml_fileset = [_file for _file in fileset \
+                       if osp.splitext(_file)[1] == '.xml']
+
+        if xml_fileset:
+            self._add_file_set(web_xml, 'xml', xml_fileset)
+
 class JsPkg:
 
     PKG_ROOT_DIRNAME = "pkg1"
-    WEB_FILE_TYPES = ['.js', '.html', '.css']
+    WEB_FILE_TYPES = ['.js', '.html', '.css', '.xml']
 
     @classmethod
     def get_env(cls, pwd):
@@ -379,7 +385,7 @@ def get_pkg_obj(pkg_conf_file, input_root_dir, build_root_dir):
     pkg_conf = confreader.read_conf_into_dict(pkg_conf_file)
 
     web_pkg_types = {
-        'node-js' : JsNodePkg,
+        'npm' : JsNodePkg,
         'no-build' : JsNodePkg,
     }
 

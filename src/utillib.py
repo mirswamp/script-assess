@@ -399,9 +399,3 @@ def filter_file_list(file_list, root_dir, patterns):
 
     return list(new_file_list)
 
-
-if __name__ == '__main__':
-    for _file in get_file_list(sys.argv[1],
-                               osp.join(sys.argv[1], '.npmignore'),
-                               ['.js', '.html', '.css']):
-        print(_file)

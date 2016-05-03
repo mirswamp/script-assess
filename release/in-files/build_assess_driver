@@ -59,14 +59,11 @@ if [[ -z "$VMPLATNAME" ]]; then
     export VMPLATNAME=$("$VMINPUTDIR/get-platform")
 fi
 
-#set -x -v
+set -x -v
 
-(
-    OPT_SWAMP_DIR=/opt/swamp
-    cd $OPT_SWAMP_DIR;
-    NODE_DIR=$(untar $VMINPUTDIR/node-v4.4.0-linux-x64.tar.xz $OPT_SWAMP_DIR)
-    [[ $? == 0 ]] && export PATH="$OPT_SWAMP_DIR/$NODE_DIR/bin:$PATH"
-)
+OPT_SWAMP_DIR=/opt/swamp
+NODE_DIR=$(untar $VMINPUTDIR/node-v6.0.0-linux-x64.tar.xz $OPT_SWAMP_DIR)
+[[ $? == 0 ]] && export PATH="$OPT_SWAMP_DIR/$NODE_DIR/bin:$PATH"
 
 echo
 echo $p: setup environment

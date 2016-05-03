@@ -66,7 +66,7 @@ class BuildArtifactsHelper:
         artifacts['srcfile'] = list()
 
         for elem in xml_elem:
-            if elem.tag in ['javascript', 'html', 'css']:
+            if elem.tag in ['javascript', 'html', 'css', 'xml']:
                 fileset = BuildArtifactsHelper._get_fileset(artifacts['build-root-dir'],
                                                             elem)
                 artifacts[elem.tag] = fileset
@@ -257,6 +257,11 @@ class SwaTool:
 
     def _get_env(self):
         new_env = dict(os.environ)
+
+        if 'tool-env' in self._tool_conf:
+            tool_env = self._tool_conf['tool-env']
+            new_env.update({a[0] : a[2] for a in \
+                            map( lambda s : s.partition('='), tool_env.split(','))})
         return new_env
 
     def _install(self, tool_root_dir):
