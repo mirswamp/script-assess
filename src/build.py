@@ -148,6 +148,22 @@ class BuildSummaryJavascript(BuildSummary):
         build_artifacts_xml = BuildSummary._add(self._root, 'build-artifacts')
         web_xml = BuildSummary._add(build_artifacts_xml, 'web-src')
 
+        for lang, ext in JsPkg.LANG_EXT_MAPPING.items():
+            if isinstance(ext, str):
+                files = [_file for _file in fileset \
+                         if osp.splitext(_file)[1] == ext]
+            else:
+                files = [_file for _file in fileset \
+                         if osp.splitext(_file)[1] in ext]
+            
+            if files:
+                self._add_file_set(web_xml, lang, files)
+
+    def add_build_artifacts_old(self, fileset):
+
+        build_artifacts_xml = BuildSummary._add(self._root, 'build-artifacts')
+        web_xml = BuildSummary._add(build_artifacts_xml, 'web-src')
+
         js_fileset = [_file for _file in fileset \
                       if osp.splitext(_file)[1] == '.js']
 
@@ -177,6 +193,25 @@ class JsPkg:
 
     PKG_ROOT_DIRNAME = "pkg1"
     WEB_FILE_TYPES = ['.js', '.html', '.css', '.xml']
+    LANG_EXT_MAPPING = { 'javascript' : '.js',
+                         'html' : ['.html', '.htm'],
+                         'css' : '.css',
+                         'xml' : '.xml',
+                         'php' : '.php',
+    }
+
+    @classmethod
+    def get_file_types(cls, pkg_lang):
+        '''pkg_lang is a string'''
+
+        ext_list = []
+        for lang in pkg_lang.split():
+            ext = JsPkg.LANG_EXT_MAPPING[lang.lower()]
+            if isinstance(ext, str):
+                ext_list.append(ext)
+            else:
+                ext_list.extend(ext)
+        return ext_list
 
     @classmethod
     def get_env(cls, pwd):
@@ -272,8 +307,7 @@ class JsPkg:
 
 class JsNodePkg(JsPkg):
 
-    @classmethod
-    def get_nodejs_files(cls, pkg_dir):
+    def get_nodejs_files(self, pkg_dir):
 
         def npm_ignore_list():
             ignore_file = None
@@ -303,26 +337,35 @@ class JsNodePkg(JsPkg):
                 for _file in [osp.join(pkg_dir, f) \
                               for f in pkg_json['files']]:
                     if osp.isdir(_file):
-                        fileset.update(utillib.get_file_list(_file, None, JsPkg.WEB_FILE_TYPES))
+                        fileset.update(utillib.get_file_list(_file, None,
+                                                             JsPkg.get_file_types(self.pkg_conf['package-language'])))
                     else:
                         fileset.add(_file)
             else:
-                
                 fileset.update(utillib.get_file_list(pkg_dir,
-                                                     npm_ignore_list(), JsPkg.WEB_FILE_TYPES))
+                                                     npm_ignore_list(),
+                                                     JsPkg.get_file_types(self.pkg_conf['package-language'])))
 
         return fileset
 
-    @classmethod
-    def get_js_files(cls, pkg_dir, exclude_filter):
+    def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
+        JsPkg.__init__(self, pkg_conf_file, input_root_dir, build_root_dir)
+
+    def is_a_node_pkg(self, pkg_dir):
+        return True if (self.pkg_conf['build-sys'] == 'npm' and \
+                        osp.isfile(osp.join(pkg_dir, 'package.json'))) else False
+
+    def get_src_files(self, pkg_dir, exclude_filter):
 
         file_filters = utillib.get_file_filters(pkg_dir, exclude_filter.split(','))
 
         fileset = set()
-        if osp.isfile(osp.join(pkg_dir, 'package.json')):
-            fileset = cls.get_nodejs_files(pkg_dir)
+        if self.is_a_node_pkg(pkg_dir):
+            fileset = self.get_nodejs_files(pkg_dir)
         else:
-            fileset.update(utillib.get_file_list(pkg_dir, None, JsPkg.WEB_FILE_TYPES))
+            fileset.update(utillib.get_file_list(pkg_dir,
+                                                 None,
+                                                 JsPkg.get_file_types(self.pkg_conf['package-language'])))
 
         fileset = fileset.difference(file_filters.exclude_files)
 
@@ -331,9 +374,6 @@ class JsNodePkg(JsPkg):
                                      if _file.startswith(osp.join(exdir, '')))
 
         return fileset
-
-    def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
-        JsPkg.__init__(self, pkg_conf_file, input_root_dir, build_root_dir)
 
     def build(self, build_root_dir):
 
@@ -348,13 +388,19 @@ class JsNodePkg(JsPkg):
                 pkg_build_dir = osp.normpath(osp.join(self.pkg_dir,
                                                       self.pkg_conf.get('build-dir', '.')))
 
-                build_cmd = ':'
+                #TODO: Build Command 'npm install'
+                if self.pkg_conf['build-sys'] == 'npm':
+                    build_cmd = 'npm install'
+                else:
+                    build_cmd = ':'
+                    
                 outfile = osp.join(build_root_dir, 'build_stdout.out')
                 errfile = osp.join(build_root_dir, 'build_stderr.err')
 
-                exit_code, environ = 0, dict(os.environ)
+                exit_code, environ = JsPkg.run_cmd(build_cmd, pkg_build_dir,
+                                                   outfile, errfile, "BUILD")
                 
-                build_summary.add_command('rake', build_cmd,
+                build_summary.add_command('build', build_cmd,
                                           [], exit_code, environ,
                                           environ['PWD'],
                                           outfile, errfile)
@@ -366,8 +412,8 @@ class JsNodePkg(JsPkg):
                                              osp.relpath(outfile, build_root_dir),
                                              osp.relpath(errfile, build_root_dir))
 
-                fileset = JsNodePkg.get_js_files(pkg_build_dir,
-                                                 self.pkg_conf.get('package-exclude-paths', ''))
+                fileset = self.get_src_files(pkg_build_dir,
+                                             self.pkg_conf.get('package-exclude-paths', ''))
 
                 if len(fileset) == 0:
                     err = EmptyPackageError(osp.basename(self.pkg_dir),
