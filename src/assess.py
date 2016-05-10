@@ -6,6 +6,7 @@ import logging
 import os.path as osp
 import xml.etree.ElementTree as ET
 import subprocess
+import fnmatch
 
 from . import gencmd
 from . import utillib
@@ -477,6 +478,29 @@ class Flow(SwaTool):
     def __init__(self, input_root_dir, tool_root_dir):
         SwaTool.__init__(self, input_root_dir, tool_root_dir)
 
+    @classmethod
+    def _convert_to_regex(cls, pattern):
+        regex = fnmatch.translate(pattern)
+        #fnmatch adds this to the end of the regex, don't understand why
+        if regex.endswith('\\Z(?ms)'):
+            regex = regex.rpartition('\\Z(?ms)')[0]
+
+        return regex
+        
+    def _create_flowconfig(self, build_artifacts_helper, assessment_working_dir):
+        
+        if not osp.isfile(osp.join(assessment_working_dir, '.flowconfig')):
+
+            content = '''[include]\n\n[libs]\n\n[options]\n\n[ignore]\n<PROJECT_ROOT>/node_modules\n'''
+            if build_artifacts_helper['package-exclude-paths']:
+                #TODO: These may have to converted into ocaml regex
+                exclude = '\n'.join(['<PROJECT_ROOT>/' + self._convert_to_regex(pattern.strip()) for pattern in \
+                                     build_artifacts_helper['package-exclude-paths'].split(',')])
+                content += exclude + '\n'
+
+            with open(osp.join(assessment_working_dir, '.flowconfig'), 'w') as fobj:
+                fobj.write(content)
+        
     def assess(self, build_summary_file, results_root_dir):
 
         if not osp.isdir(results_root_dir):
@@ -521,15 +545,9 @@ class Flow(SwaTool):
             
             start_time = utillib.posix_epoch()
 
-            if not osp.isfile(osp.join(assessment_working_dir, '.flowconfig')):
-                # utillib.run_cmd('%s init' % (artifacts['executable']),
-                #                 cwd=assessment_working_dir,
-                #                 env=self._get_env())
-
-                utillib.run_cmd('cp ${VMINPUTDIR}/default-flowconfig .flowconfig',
-                                cwd=assessment_working_dir,
-                                env=self._get_env())
-
+            #TODO: create flow config
+            self._create_flowconfig(build_artifacts_helper, assessment_working_dir)
+            
             exit_code, environ = utillib.run_cmd(assess_cmd,
                                                  outfile=outfile,
                                                  errfile=errfile,
