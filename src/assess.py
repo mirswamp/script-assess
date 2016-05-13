@@ -487,20 +487,36 @@ class Flow(SwaTool):
 
         return regex
         
-    def _create_flowconfig(self, build_artifacts_helper, assessment_working_dir):
+    def _create_flowconfig(self, assessment_working_dir):
         
         if not osp.isfile(osp.join(assessment_working_dir, '.flowconfig')):
 
             content = '''[include]\n\n[libs]\n\n[options]\n\n[ignore]\n<PROJECT_ROOT>/node_modules\n'''
-            if build_artifacts_helper['package-exclude-paths']:
+            if self.build_artifacts_helper['package-exclude-paths']:
                 #TODO: These may have to converted into ocaml regex
-                exclude = '\n'.join(['<PROJECT_ROOT>/' + self._convert_to_regex(pattern.strip()) for pattern in \
-                                     build_artifacts_helper['package-exclude-paths'].split(',')])
-                content += exclude + '\n'
+                ignore_patterns = '\n'.join({'<PROJECT_ROOT>/' + self._convert_to_regex(pattern.strip()) for pattern in \
+                                     self.build_artifacts_helper['package-exclude-paths'].split(',')})
+                content += ignore_patterns + '\n'
+
+            ignore_file = None
+            if osp.isfile(osp.join(assessment_working_dir, '.npmignore')):
+                ignore_file = osp.join(assessment_working_dir, '.npmignore')
+            elif osp.isfile(osp.join(assessment_working_dir, '.gitignore')):
+                ignore_file = osp.join(assessment_working_dir, '.gitignore')
+
+            if ignore_file:
+                with open(ignore_file) as fobj:
+                    ignore_patterns = {p.strip().strip('\n') for p in fobj \
+                                       if p and not p.isspace() and not p.strip().startswith('#')}
+                    content +=  '\n'.join({'<PROJECT_ROOT>/' + self._convert_to_regex(pattern) \
+                                           for pattern in ignore_patterns})
+                    content += '\n'
 
             with open(osp.join(assessment_working_dir, '.flowconfig'), 'w') as fobj:
+                logging.info('DOT FLOWCONFIG: %s', content)
                 fobj.write(content)
-        
+
+                
     def assess(self, build_summary_file, results_root_dir):
 
         if not osp.isdir(results_root_dir):
@@ -508,12 +524,12 @@ class Flow(SwaTool):
 
         assessment_summary_file = osp.join(results_root_dir, 'assessment_summary.xml')
 
-        build_artifacts_helper = BuildArtifactsHelper(build_summary_file)
+        self.build_artifacts_helper = BuildArtifactsHelper(build_summary_file)
 
         passed = 0
         failed = 0
         with AssessmentSummary(assessment_summary_file,
-                               build_artifacts_helper,
+                               self.build_artifacts_helper,
                                self._tool_conf) as assessment_summary:
 
             artifacts = {'id': 1}
@@ -541,12 +557,12 @@ class Flow(SwaTool):
             logging.info('ASSESSMENT CMD: %s', assess_cmd)
             
             #For Flow package dir is assessment working dir
-            assessment_working_dir = build_artifacts_helper.get_pkg_dir()
+            assessment_working_dir = self.build_artifacts_helper.get_pkg_dir()
             
             start_time = utillib.posix_epoch()
 
             #TODO: create flow config
-            self._create_flowconfig(build_artifacts_helper, assessment_working_dir)
+            self._create_flowconfig(assessment_working_dir)
             
             exit_code, environ = utillib.run_cmd(assess_cmd,
                                                  outfile=outfile,
@@ -587,7 +603,7 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
 
     if tool_conf['tool-type'] == 'flow':
         swatool = Flow(input_root_dir, tool_root_dir)
-    elif tool_conf['tool-type'] in ['PHP_CodeSniffer', 'phpmd']:
+    elif tool_conf['tool-type'] in ['phpcs', 'phpmd']:
         swatool = PhpTool(input_root_dir, tool_root_dir)
     else:
         swatool = JsTool(input_root_dir, tool_root_dir)

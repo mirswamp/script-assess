@@ -109,6 +109,8 @@ def unpack_archive(archive, dirpath, createdir=True):
          (osp.splitext(archive)[1].lower() == '.war') or\
          (osp.splitext(archive)[1].lower() == '.ear'):
         return run_cmd(['unzip', '-qq', '-o', archive], cwd=dirpath)[0]
+    elif archive.endswith('.phar'):
+        return run_cmd(['phar', 'extract', '-f', archive], cwd=dirpath)[0]
     else:
         raise ValueError('Format not supported')
 

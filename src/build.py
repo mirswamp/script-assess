@@ -391,9 +391,13 @@ class JsNodePkg(JsPkg):
                 #TODO: Build Command 'npm install'
                 if self.pkg_conf['build-sys'] == 'npm':
                     build_cmd = 'npm install'
+                elif self.pkg_conf['build-sys'] == 'composer':
+                    build_cmd = 'php ${VMINPUTDIR}/composer.phar install --no-interaction --no-progress'
+                elif self.pkg_conf['build-sys'] == 'pear':
+                    build_cmd = 'pear config-set php_dir ${BUILD_DIR}/user_lib && pear install --alldeps --register-only ${VMINPUTDIR}/%s' % self.pkg_conf['package-archive']
                 else:
                     build_cmd = ':'
-                    
+
                 outfile = osp.join(build_root_dir, 'build_stdout.out')
                 errfile = osp.join(build_root_dir, 'build_stderr.err')
 
@@ -433,6 +437,8 @@ def get_pkg_obj(pkg_conf_file, input_root_dir, build_root_dir):
     web_pkg_types = {
         'npm' : JsNodePkg,
         'no-build' : JsNodePkg,
+        'composer' : JsNodePkg,
+        'pear' : JsNodePkg,
     }
 
     build_sys = pkg_conf['build-sys']
