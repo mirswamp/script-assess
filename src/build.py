@@ -1,10 +1,8 @@
 import os
-import re
-import shutil
 import os.path as osp
+import shutil
 import logging
 import json
-import glob
 from abc import ABCMeta
 import xml.etree.ElementTree as ET
 
@@ -142,7 +140,7 @@ class BuildSummaryJavascript(BuildSummary):
         for _file in fileset:
             BuildSummary._add(xml_elem, 'file',
                               osp.relpath(_file, self.build_root_dir))
-        
+
     def add_build_artifacts(self, fileset):
 
         build_artifacts_xml = BuildSummary._add(self._root, 'build-artifacts')
@@ -155,7 +153,7 @@ class BuildSummaryJavascript(BuildSummary):
             else:
                 files = [_file for _file in fileset \
                          if osp.splitext(_file)[1] in ext]
-            
+
             if files:
                 self._add_file_set(web_xml, lang, files)
 
@@ -172,7 +170,7 @@ class BuildSummaryJavascript(BuildSummary):
 
         html_fileset = [_file for _file in fileset \
                         if osp.splitext(_file)[1] in ['.htm', '.html']]
-        
+
         if html_fileset:
             self._add_file_set(web_xml, 'html', html_fileset)
 
@@ -193,12 +191,11 @@ class JsPkg:
 
     PKG_ROOT_DIRNAME = "pkg1"
     WEB_FILE_TYPES = ['.js', '.html', '.css', '.xml']
-    LANG_EXT_MAPPING = { 'javascript' : '.js',
-                         'html' : ['.html', '.htm'],
-                         'css' : '.css',
-                         'xml' : '.xml',
-                         'php' : '.php',
-    }
+    LANG_EXT_MAPPING = {'javascript' : '.js',
+                        'html' : ['.html', '.htm'],
+                        'css' : '.css',
+                        'xml' : '.xml',
+                        'php' : '.php'}
 
     @classmethod
     def get_file_types(cls, pkg_lang):
@@ -241,7 +238,7 @@ class JsPkg:
         logging.info('%s ENVIRONMENT %s', description, _environ)
 
         return (exit_code, _environ)
-    
+
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
 
         self.pkg_conf = confreader.read_conf_into_dict(pkg_conf_file)
@@ -388,7 +385,6 @@ class JsNodePkg(JsPkg):
                 pkg_build_dir = osp.normpath(osp.join(self.pkg_dir,
                                                       self.pkg_conf.get('build-dir', '.')))
 
-                #TODO: Build Command 'npm install'
                 if self.pkg_conf['build-sys'] == 'npm':
                     build_cmd = 'npm install'
                 elif self.pkg_conf['build-sys'] == 'composer':
@@ -403,7 +399,7 @@ class JsNodePkg(JsPkg):
 
                 exit_code, environ = JsPkg.run_cmd(build_cmd, pkg_build_dir,
                                                    outfile, errfile, "BUILD")
-                
+
                 build_summary.add_command('build', build_cmd,
                                           [], exit_code, environ,
                                           environ['PWD'],

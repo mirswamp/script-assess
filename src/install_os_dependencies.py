@@ -1,6 +1,6 @@
 import os
-import logging
 import os.path as osp
+import logging
 from .logger import LogTaskStatus
 
 from . import utillib

@@ -6,7 +6,6 @@ import sys
 import datetime
 import time
 import re
-import string
 import shlex
 import uuid
 from collections import namedtuple
@@ -92,18 +91,59 @@ def unpack_archive(archive, dirpath, createdir=True):
     archive = osp.abspath(archive)
     dirpath = osp.abspath(dirpath)
 
+    cmd_template_dict = {'.tar.gz' :  'tar -x -z -f %s',
+                         '.tar.Z' :  'tar -x -Z -f %s',
+                         '.tar.bz2' :  'tar -x -j -f %s',
+                         '.tar.tgz' :  'tar -x -z -f %s',
+                         '.tar' :  'tar -x -z -f %s',
+                         '.zip' :  'unzip -qq -o %s',
+                         '.jar' :  'unzip -qq -o %s',
+                         '.war' :  'unzip -qq -o %s',
+                         '.ear' :  'unzip -qq -o %s',
+                         '.phar' : 'phar extract -f %s'}
+
+    if any((archive.endswith(ext) for ext in cmd_template_dict)):
+        cmd = [cmd_template_dict[ext] % archive for ext in cmd_template_dict if archive.endswith(ext)][0]
+        return run_cmd(cmd, cwd=dirpath)[0]
+    elif archive.endswith('.tar.xz'):
+        return _unpack_archive_xz(archive, dirpath)
+    else:
+        raise ValueError('Format not supported')
+
+def unpack_archive_old(archive, dirpath, createdir=True):
+    '''
+    Unarchives/Extracts the file \'archive\' in the directory \'dirpath\'.
+    Expects \'dirpath\' to be already present.
+    Throws FileNotFoundException and NotADirectoryException if
+    archive or dirpath not found
+    ValueError if archive format is not supported.
+    '''
+
+    if not osp.isfile(archive):
+        raise FileNotFoundException(archive)
+
+    if not osp.isdir(dirpath):
+        if createdir:
+            #os.mkdir(dirpath)
+            os.makedirs(dirpath)
+        else:
+            raise NotADirectoryException(dirpath)
+
+    archive = osp.abspath(archive)
+    dirpath = osp.abspath(dirpath)
+
     if archive.endswith('.tar.gz'):
-        return run_cmd(['tar', '-x', '-z', '-f', archive], cwd=dirpath)[0]
-    elif archive.endswith('.tgz'):
         return run_cmd(['tar', '-x', '-z', '-f', archive], cwd=dirpath)[0]
     elif archive.endswith('.tar.Z'):
         return run_cmd(['tar', '-x', '-Z', '-f', archive], cwd=dirpath)[0]
     elif archive.endswith('.tar.bz2'):
         return run_cmd(['tar', '-x', '-j', '-f', archive], cwd=dirpath)[0]
-    elif archive.endswith('.tar'):
-        return run_cmd(['tar', '-x', '-f', archive], cwd=dirpath)[0]
     elif archive.endswith('.tar.xz'):
         return _unpack_archive_xz(archive, dirpath)
+    elif archive.endswith('.tgz'):
+        return run_cmd(['tar', '-x', '-z', '-f', archive], cwd=dirpath)[0]
+    elif archive.endswith('.tar'):
+        return run_cmd(['tar', '-x', '-f', archive], cwd=dirpath)[0]
     elif (osp.splitext(archive)[1].lower() == '.zip') or\
          (osp.splitext(archive)[1].lower() == '.jar') or\
          (osp.splitext(archive)[1].lower() == '.war') or\
@@ -273,7 +313,7 @@ def ordered_list(_list):
     return new_list
 
 ######
-    
+
 FileFilters = namedtuple('FileFilters', ['exclude_dirs', 'exclude_files', \
                                          'include_dirs', 'include_files'])
 
@@ -314,7 +354,7 @@ def get_file_filters(root_dir, patterns):
                     ex_dir_list.add(osp.normpath(_file))
                 else:
                     ex_file_list.add(osp.normpath(_file))
-    
+
     in_dir_list = set()
     in_file_list = set()
 
@@ -342,7 +382,7 @@ def filter_out(root_dir, file_filters, file_types):
 
     hidden_dir_list = []
 
-    for dirpath, dirnames, filenames in os.walk(root_dir):
+    for dirpath, _, filenames in os.walk(root_dir):
 
         if osp.basename(dirpath).startswith('.'):
             hidden_dir_list.append(dirpath)
@@ -358,14 +398,14 @@ def filter_out(root_dir, file_filters, file_types):
                     yield _file
 
 
-def filter_in(root_dir, file_filters, file_types):
+def filter_in(file_filters, file_types):
     '''
     This is a generator function.
     '''
 
-    
+
     for include_dir in file_filters.include_dirs:
-        for dirpath, dirnames, filenames in os.walk(include_dir):
+        for dirpath, _, filenames in os.walk(include_dir):
             for _file in filenames:
                 if osp.splitext(_file)[1] in file_types:
                     yield osp.join(dirpath, _file)
@@ -378,11 +418,11 @@ def filter_in(root_dir, file_filters, file_types):
 def get_file_list(root_dir, patterns, file_types):
 
     file_filters = get_file_filters(root_dir, patterns)
-    
+
     file_list = list()
     file_list.extend(filter_out(root_dir, file_filters, file_types))
-    file_list.extend(filter_in(root_dir, file_filters, file_types))
-    
+    file_list.extend(filter_in(file_filters, file_types))
+
     return file_list
 
 def filter_file_list(file_list, root_dir, patterns):

@@ -88,8 +88,10 @@ def read_conf_into_dict(filename):
             pass
     return conf_dict
 
-if __name__ == '__main__':
-    conf_dict = read_conf_into_dict(sys.argv[1])
+def main(filepath):
+    conf_dict = read_conf_into_dict(filepath)
     for key in sorted(conf_dict.keys()):
         print('|{0}|\t:\t|{1}|'.format(key, conf_dict[key].replace(' ', '.')))
 
+if __name__ == '__main__':
+    main(sys.argv[1])

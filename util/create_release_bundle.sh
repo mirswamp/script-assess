@@ -21,7 +21,8 @@ function md5_sum {
 
 function main {
 
-	local framework="$(basename $PWD)"
+	#local framework="$(basename $PWD)"
+	local framework="script-assess"
 	local new_version="$2"
     local dest_dir="$1/$framework-$new_version"
 
@@ -61,7 +62,12 @@ function copy_scripts {
 	[[ -d "$release_dir/swamp-conf" ]] && \
 		cp -r "$release_dir/swamp-conf" "$dest_dir"
 
+	local NODEJS=$(find $HOME/p/swamp/frameworks/node.js/noarch -name 'node-v?.?.?-linux-x64.tar.xz' | sort | tail -n 1)
+	local PHP_COMPOSER=$(find $HOME/p/swamp/frameworks/php/noarch -name 'composer.phar' | sort | tail -n 1)
+
     cp -r "$release_dir/in-files" "$dest_dir"
+	cp -r "$NODEJS" "$dest_dir/in-files"
+	cp -r "$PHP_COMPOSER" "$dest_dir/in-files"
 
 	local scripts_dir="$dest_dir/in-files/scripts"
 	mkdir -p "$scripts_dir"

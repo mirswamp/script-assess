@@ -1,7 +1,7 @@
 import sys
 import os
-import logging
 import os.path as osp
+import logging
 
 from . import swamp
 from . import cli_argparse
