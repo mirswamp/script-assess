@@ -1,5 +1,57 @@
 #! /bin/bash
 
+
+p=`basename $0`
+
+## Create a java-assess release.
+## Must be run from root directory of java-assess workspace.
+
+make_tarball=true
+make_cksum=true
+
+while [ $# -gt 0 ] ; do
+	case $1 in
+	--no-tar)
+		make_tarball=false
+		;;
+	--no-ck)
+		make_cksum=false
+		;;
+	--test)
+		make_tarball=false
+		make_cksum=false
+		;;
+	-*)
+		echo $p: $1: unkown optarg 1>&2
+		exit 1
+		;;
+	*)
+		break
+		;;
+	esac
+	shift
+done
+
+if [ $# -lt 1  -o  $# -gt 2 ] ; then
+	echo usage: $p dest-dir '[version]' 1>&2
+	exit 1
+fi
+
+p_swamp=/p/swamp/frameworks
+
+## hack for vamshi's laptop environment
+if [ ! -d $p_swamp ] ; then
+	p_swamp=$HOME/$p_swamp
+	echo $p: adjusting /p/swamp for vamshi
+fi
+
+update_platform=$p_swamp/platform/update-platform
+
+if [ ! -x $update_platform ] ; then
+	echo $p: platform update tool missing/unusable 1>&2
+	exit 1
+fi
+
 function md5_sum {
 
 	local dest_dir="$1"
@@ -62,12 +114,21 @@ function copy_scripts {
 	[[ -d "$release_dir/swamp-conf" ]] && \
 		cp -r "$release_dir/swamp-conf" "$dest_dir"
 
-	local NODEJS=$(find /p/swamp/frameworks/node.js/noarch -name 'node-v?.?.?-linux-x64.tar.xz' | sort | tail -n 1)
-	local PHP_COMPOSER=$(find /p/swamp/frameworks/php/noarch -name 'composer.phar' | sort | tail -n 1)
+	FRAMEWORKS="/p/swamp/frameworks"
 
+	if [[ ! -d "$FRAMEWORKS" ]]; then
+		FRAMEWORKS="$HOME/$FRAMEWORKS"
+	fi
+	
+	local NODEJS=$(find "$FRAMEWORKS/node.js/noarch" -name 'node-v?.?.?-linux-x64.tar.xz' | sort | tail -n 1)
+	local PHP_COMPOSER=$(find "$FRAMEWORKS/php/noarch" -name 'composer.phar' | sort | tail -n 1)
+
+	mkdir -p "$dest_dir/in-files"
     cp -r "$release_dir/in-files" "$dest_dir"
 	cp -r "$NODEJS" "$dest_dir/in-files"
 	cp -r "$PHP_COMPOSER" "$dest_dir/in-files"
+	
+	$update_platform --framework node.js  --dir "$dest_dir/in-files" || exit 1
 
 	local scripts_dir="$dest_dir/in-files/scripts"
 	mkdir -p "$scripts_dir"

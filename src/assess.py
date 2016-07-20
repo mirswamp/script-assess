@@ -305,7 +305,8 @@ class SwaTool:
 
 class WebTool(SwaTool):
 
-    FILE_TYPE = None
+    #FILE_TYPE = None
+    FILE_TYPE = 'srcfile'
 
     def __init__(self, input_root_dir, tool_root_dir):
         SwaTool.__init__(self, input_root_dir, tool_root_dir)
@@ -606,6 +607,8 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
         swatool = Flow(input_root_dir, tool_root_dir)
     elif tool_conf['tool-type'] in ['phpcs', 'phpmd']:
         swatool = PhpTool(input_root_dir, tool_root_dir)
+    elif tool_conf['tool-type'] in ['cloc', 'lizard']:
+        swatool = WebTool(input_root_dir, tool_root_dir)
     else:
         swatool = JsTool(input_root_dir, tool_root_dir)
 
