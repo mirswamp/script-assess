@@ -1,5 +1,4 @@
 import sys
-import os
 import os.path as osp
 import logging
 
@@ -225,40 +224,12 @@ def process_option(obj, symbol_table):
             else:
                 return '{0}{1}{2}'.format(name, sep, ''.join(val))
 
-def process_quotedstring_old(qstr, symbol_table):
-    '''Substitues environment variables and
-    config parameters in the string.
-    quotes the string and returns it'''
-
-    qstr_new = qstr
-    for match in utillib.PARAM_REGEX.finditer(qstr):
-        name = match.groupdict()['name']
-        sep = match.groupdict()['sep']
-
-        if name in symbol_table:
-            value = symbol_table[name]
-            if not isinstance(value, str):
-                if sep is None:
-                    value = value[0]
-                else:
-                    value = sep.join(value)
-        else:
-            value = ''
-
-        f = '<{0}>' if sep is None else '<{0}%{1}>'
-        qstr_new = qstr_new.replace(f.format(match.groupdict()['name'],
-                                             match.groupdict()['sep']),
-                                    value, 1)
-
-    qstr_new = utillib.string_substitute(qstr_new, os.environ)
-
-    #return utillib.quote_str(qstr_new[1:-1])
-    return qstr_new[1:-1]
 
 def process_quotedstring(string_template, symbol_table):
     '''Substitues environment variables and
     config parameters in the string.'''
     return utillib.string_substitute(string_template, symbol_table)[1:-1]
+
 
 def gencmd(str_or_file, symbol_table):
     '''str_or_file: Can be a file or a string'''
@@ -285,6 +256,7 @@ def gencmd(str_or_file, symbol_table):
         return cmd
     else:
         raise Exception('AST not correct')
+
 
 def get_param_list(filename):
     _tokens = tokenize(_get_string(filename))

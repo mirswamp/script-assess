@@ -67,7 +67,8 @@ class BuildArtifactsHelper:
         artifacts['srcfile'] = list()
 
         for elem in xml_elem:
-            if elem.tag in JsPkg.LANG_EXT_MAPPING.keys(): #['javascript', 'html', 'css', 'xml']:
+             #['javascript', 'html', 'css', 'xml']:
+            if elem.tag in JsPkg.LANG_EXT_MAPPING.keys():
                 fileset = BuildArtifactsHelper._get_fileset(artifacts['build-root-dir'],
                                                             elem)
                 artifacts[elem.tag] = fileset
@@ -78,9 +79,10 @@ class BuildArtifactsHelper:
     @classmethod
     def _get_build_summary(cls, root):
         '''returns a dictionary'''
-        return {elem.tag:elem.text for elem in root \
-                if(elem.tag not in ['package-conf',\
-                                    'command', 'build-artifacts',\
+        return {elem.tag: elem.text for elem in root
+                if(elem.tag not in ['package-conf',
+                                    'command',
+                                    'build-artifacts',
                                     'build-command'])}
 
     def __init__(self, build_summary_file):
@@ -104,7 +106,7 @@ class BuildArtifactsHelper:
 
         self._build_summary = BuildArtifactsHelper._get_build_summary(root)
         self._build_artifacts = root.find('build-artifacts')
-        self._package_conf = {elem.tag:elem.text for elem in root.find('package-conf')}
+        self._package_conf = {elem.tag: elem.text for elem in root.find('package-conf')}
 
     def __contains__(self, key):
         return True if(key in self._build_summary) else False
@@ -192,8 +194,8 @@ class AssessmentSummary:
         assess_elem = AssessmentSummary._add(self._assessment_artifacts, 'assessment')
         if build_artifact_id:
             AssessmentSummary._add(assess_elem, 'build-artifact-id',
-                                   str(build_artifact_id) if isinstance(build_artifact_id, int) \
-                                       else build_artifact_id)
+                                   str(build_artifact_id) if isinstance(build_artifact_id, int)
+                                   else build_artifact_id)
         if osp.isfile(report):
             AssessmentSummary._add(assess_elem, 'report', osp.basename(report))
         if osp.isfile(stdout):
@@ -236,7 +238,7 @@ class SwaTool:
         else:
             self._tool_conf = tool_conf
 
-        self._tool_conf = {key: utillib.expandvar(self._tool_conf[key], self._tool_conf) \
+        self._tool_conf = {key: utillib.expandvar(self._tool_conf[key], self._tool_conf)
                            for key in self._tool_conf}
 
         if 'assessment-report-template' not in self._tool_conf:
@@ -245,7 +247,7 @@ class SwaTool:
         self._unarchive(input_root_dir, tool_root_dir)
         self._install(tool_root_dir)
 
-        #logging.info('TOOL CONF: %s', self._tool_conf)
+        # logging.info('TOOL CONF: %s', self._tool_conf)
 
     def _unarchive(self, input_root_dir, tool_root_dir):
 
@@ -263,7 +265,7 @@ class SwaTool:
             tool_env = self._tool_conf['tool-env']
             # new_env.update({a[0] : a[2] for a in \
             #                 map(lambda s: s.partition('='), tool_env.split(','))})
-            new_env.update(((var_val.partition('=')[0], var_val.partition('=')[2]) \
+            new_env.update(((var_val.partition('=')[0], var_val.partition('=')[2])
                             for var_val in tool_env.split(',')))
         return new_env
 
@@ -290,7 +292,8 @@ class SwaTool:
 
                 if exit_code != 0:
                     raise ToolInstallFailedError("Install Tool Failed, "
-                                                 "Command '{0}' return {1}".format(install_cmd, exit_code))
+                                                 "Command '{0}' return {1}".format(install_cmd,
+                                                                                   exit_code))
 
     def _validate_exit_code(self, exit_code):
         if 'valid-exit-status' in self._tool_conf:
@@ -305,8 +308,21 @@ class SwaTool:
 
 class WebTool(SwaTool):
 
-    #FILE_TYPE = None
+    # FILE_TYPE = None
     FILE_TYPE = 'srcfile'
+
+    @classmethod
+    def _has_artifacts(cls, invoke_file, artifacts):
+        ''' Each tool works on certain types of files such as html, css, javascript '''
+        tokens = gencmd.get_param_list(invoke_file)
+
+        found_artifacts = False
+        for file_type in set(tokens).difference(set(JsPkg.LANG_EXT_MAPPING.keys())):
+            if file_type in artifacts and len(artifacts[file_type]):
+                found_artifacts = True
+                break
+
+        return found_artifacts
 
     def __init__(self, input_root_dir, tool_root_dir):
         SwaTool.__init__(self, input_root_dir, tool_root_dir)
@@ -314,7 +330,7 @@ class WebTool(SwaTool):
     def _split_build_artifacts(self, artifacts):
         '''Splits only if required'''
 
-        #returns list of list
+        # returns list of list
         split_required, max_allowed_size = self._split_artifacts_required(artifacts)
         if split_required:
             split_file_lists = list()
@@ -358,7 +374,6 @@ class WebTool(SwaTool):
         else:
             return (False, 0)
 
-
     def _split_list(self, llist, filelist, max_args_size):
         if len(' '.join(filelist)) > max_args_size:
             self._split_list(llist, filelist[0:int(len(filelist)/2)], max_args_size)
@@ -388,7 +403,7 @@ class WebTool(SwaTool):
                                                                             self._tool_conf['tool-config-file']))
             else:
                 self._tool_conf['tool-config-file'] = self._tool_conf['tool-default-config-file']
-
+    
     def assess(self, build_summary_file, results_root_dir):
 
         if not osp.isdir(results_root_dir):
@@ -405,7 +420,7 @@ class WebTool(SwaTool):
                                build_artifacts_helper,
                                self._tool_conf) as assessment_summary:
 
-            for artifacts in self._get_build_artifacts(build_artifacts_helper, \
+            for artifacts in self._get_build_artifacts(build_artifacts_helper,
                                                        results_root_dir):
 
                 if 'report-on-stdout' in artifacts \
@@ -418,28 +433,33 @@ class WebTool(SwaTool):
                 errfile = osp.join(results_root_dir,
                                    'swa_tool_stderr{0}.out'.format(artifacts['build-artifact-id']))
 
-                assess_cmd = gencmd.gencmd(osp.join(self.input_root_dir,
-                                                    artifacts['tool-invoke']),
-                                           artifacts)
-
-                logging.info('ASSESSMENT CMD: %s', assess_cmd)
-
+                invoke_file = osp.join(self.input_root_dir, artifacts['tool-invoke'])
+                skip_assess = WebTool._has_artifacts(invoke_file, artifacts)
+                
                 start_time = utillib.posix_epoch()
-                exit_code, environ = utillib.run_cmd(assess_cmd,
-                                                     outfile=outfile,
-                                                     errfile=errfile,
-                                                     cwd=results_root_dir,
-                                                     env=self._get_env())
 
-                logging.info('ASSESSMENT WORKING DIR: %s', results_root_dir)
-                logging.info('ASSESSMENT EXIT CODE: %d', exit_code)
-                logging.info('ASSESSMENT ENVIRONMENT: %s', environ)
+                # SKIP Assessment if no artifacts relavent to the tools are found
+                if not skip_assess:
+                    assess_cmd = gencmd.gencmd(invoke_file, artifacts)
+                    logging.info('ASSESSMENT CMD: %s', assess_cmd)
+
+                    exit_code, environ = utillib.run_cmd(assess_cmd,
+                                                         outfile=outfile,
+                                                         errfile=errfile,
+                                                         cwd=results_root_dir,
+                                                         env=self._get_env())
+
+                    logging.info('ASSESSMENT WORKING DIR: %s', results_root_dir)
+                    logging.info('ASSESSMENT EXIT CODE: %d', exit_code)
+                    logging.info('ASSESSMENT ENVIRONMENT: %s', environ)
+                else:
+                    assess_cmd, exit_code, environ = [None], 0, self._get_env()
 
                 assessment_report = artifacts['assessment-report'] \
-                                    if outfile != artifacts['assessment-report'] else \
-                                       outfile
-                #write assessment summary file
-                #return pass, fail, assessment_summary
+                                    if outfile != artifacts['assessment-report'] else outfile
+                
+                # write assessment summary file
+                # return pass, fail, assessment_summary
                 assessment_summary.add_report(artifacts['build-artifact-id'],
                                               assess_cmd,
                                               exit_code,
@@ -451,10 +471,11 @@ class WebTool(SwaTool):
                                               start_time,
                                               utillib.posix_epoch())
 
-                if self._validate_exit_code(exit_code):
-                    passed += 1
-                else:
-                    failed += 1
+                if not skip_assess:
+                    if self._validate_exit_code(exit_code):
+                        passed += 1
+                    else:
+                        failed += 1
 
             return (passed, failed, assessment_summary_file)
 
@@ -483,7 +504,7 @@ class Flow(SwaTool):
     @classmethod
     def _convert_to_regex(cls, pattern):
         regex = fnmatch.translate(pattern)
-        #fnmatch adds this to the end of the regex, don't understand why
+        # fnmatch adds this to the end of the regex, don't understand why
         if regex.endswith('\\Z(?ms)'):
             regex = regex.rpartition('\\Z(?ms)')[0]
 
@@ -495,7 +516,7 @@ class Flow(SwaTool):
 
             content = '''[include]\n\n[libs]\n\n[options]\n\n[ignore]\n<PROJECT_ROOT>/node_modules\n'''
             if self.build_artifacts_helper['package-exclude-paths']:
-                #TODO: These may have to converted into ocaml regex
+                # TODO: These may have to converted into ocaml regex
                 ignore_patterns = '\n'.join({'<PROJECT_ROOT>/' + self._convert_to_regex(pattern.strip()) for pattern in \
                                      self.build_artifacts_helper['package-exclude-paths'].split(',')})
                 content += ignore_patterns + '\n'
@@ -508,16 +529,15 @@ class Flow(SwaTool):
 
             if ignore_file:
                 with open(ignore_file) as fobj:
-                    ignore_patterns = {p.strip().strip('\n') for p in fobj \
+                    ignore_patterns = {p.strip().strip('\n') for p in fobj
                                        if p and not p.isspace() and not p.strip().startswith('#')}
-                    content += '\n'.join({'<PROJECT_ROOT>/' + self._convert_to_regex(pattern) \
+                    content += '\n'.join({'<PROJECT_ROOT>/' + self._convert_to_regex(pattern)
                                           for pattern in ignore_patterns})
                     content += '\n'
 
             with open(osp.join(assessment_working_dir, '.flowconfig'), 'w') as fobj:
                 logging.info('DOT FLOWCONFIG: %s', content)
                 fobj.write(content)
-
 
     def assess(self, build_summary_file, results_root_dir):
 
@@ -555,15 +575,14 @@ class Flow(SwaTool):
                                                 artifacts['tool-invoke']),
                                        artifacts)
 
-
             logging.info('ASSESSMENT CMD: %s', assess_cmd)
 
-            #For Flow package dir is assessment working dir
+            # For Flow package dir is assessment working dir
             assessment_working_dir = self.build_artifacts_helper.get_pkg_dir()
 
             start_time = utillib.posix_epoch()
 
-            #TODO: create flow config
+            # TODO: create flow config
             self._create_flowconfig(assessment_working_dir)
 
             exit_code, environ = utillib.run_cmd(assess_cmd,
@@ -576,8 +595,8 @@ class Flow(SwaTool):
             logging.info('ASSESSMENT EXIT CODE: %d', exit_code)
             logging.info('ASSESSMENT ENVIRONMENT: %s', environ)
 
-            #write assessment summary file
-            #return pass, fail, assessment_summary
+            # write assessment summary file
+            # return pass, fail, assessment_summary
             assessment_summary.add_report(artifacts['id'],
                                           assess_cmd,
                                           exit_code,
@@ -615,12 +634,17 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
     try:
         with LogTaskStatus('assess') as status_dot_out:
 
-            (passed, failed,\
+            (passed, failed,
              assessment_summary_file) = swatool.assess(build_summary_file, results_root_dir)
 
-            exit_code = 1 if(failed) else 0
-            status_dot_out.update_task_status(exit_code,
-                                              'pass: {0}, fail: {1}'.format(passed, failed))
+            if passed == 0 and failed == 0:
+                exit_code = 0
+                status_dot_out.skip_task(task_msg=None,
+                                         task_msg_indetail="No relavent files found to run '%s'" % tool_conf['tool-type'])
+            else:
+                exit_code = 1 if(failed) else 0
+                status_dot_out.update_task_status(exit_code,
+                                                  'pass: {0}, fail: {1}'.format(passed, failed))
     except (BuildArtifactsError,
             BuildSummaryError) as err:
         logging.exception(err)
