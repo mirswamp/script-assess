@@ -79,5 +79,5 @@ export SCRIPTS_DIR=${HOME}/$(untar "${VMINPUTDIR}/scripts.tar.gz" "$PWD")
 export PYTHONPATH="${SCRIPTS_DIR}/lib:${PYTHONPATH}"
 
 echo
-echo $p: start js_assess
-python3 -B -m js_assess --printVersion --printPlatform ${VMINPUTDIR} ${VMOUTPUTDIR} ${BUILD_DIR} ${TOOL_DIR} ${RESULTS_DIR}
+echo $p: start script_assess
+python3 -B -m script_assess --printVersion --printPlatform ${VMINPUTDIR} ${VMOUTPUTDIR} ${BUILD_DIR} ${TOOL_DIR} ${RESULTS_DIR}

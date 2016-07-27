@@ -24,8 +24,8 @@ class PrintVersion(argparse.Action):
         namespace.version = '{0} {1}'.format(parser.prog, version)
 
 def process_cmd_line_args():
-    parser = argparse.ArgumentParser(prog='ruby-assess',
-                                     description='''Assess a ruby package in SWAMP VM environment''')
+    parser = argparse.ArgumentParser(prog='script-assess',
+                                     description='''Assess a web package (Javascript, CSS, HTML, PHP) in SWAMP VM environment''')
 
     parser.add_argument('--printVersion',
                         nargs=0,

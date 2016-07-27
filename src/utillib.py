@@ -35,6 +35,7 @@ else:
     class IsADirectoryException(OSError):
         pass
 
+    
 class UnpackArchiveError(Exception):
 
     def __init__(self, filename):
@@ -49,8 +50,10 @@ class UnpackArchiveError(Exception):
 def datetime_iso8601():
     return datetime.datetime.isoformat(datetime.datetime.now())
 
+
 def posix_epoch():
     return str(time.time())
+
 
 def _unpack_archive_xz(archive, dirpath):
 
@@ -69,46 +72,6 @@ def _unpack_archive_xz(archive, dirpath):
 
     return tar_proc.returncode
 
-def unpack_archive(archive, dirpath, createdir=True):
-    '''
-    Unarchives/Extracts the file \'archive\' in the directory \'dirpath\'.
-    Expects \'dirpath\' to be already present.
-    Throws FileNotFoundException and NotADirectoryException if
-    archive or dirpath not found
-    ValueError if archive format is not supported.
-    '''
-
-    if not osp.isfile(archive):
-        raise FileNotFoundException(archive)
-
-    if not osp.isdir(dirpath):
-        if createdir:
-            #os.mkdir(dirpath)
-            os.makedirs(dirpath)
-        else:
-            raise NotADirectoryException(dirpath)
-
-    archive = osp.abspath(archive)
-    dirpath = osp.abspath(dirpath)
-
-    cmd_template_dict = {'.tar.gz' :  'tar -x -z -f %s',
-                         '.tar.Z' :  'tar -x -Z -f %s',
-                         '.tar.bz2' :  'tar -x -j -f %s',
-                         '.tar.tgz' :  'tar -x -z -f %s',
-                         '.tar' :  'tar -x -z -f %s',
-                         '.zip' :  'unzip -qq -o %s',
-                         '.jar' :  'unzip -qq -o %s',
-                         '.war' :  'unzip -qq -o %s',
-                         '.ear' :  'unzip -qq -o %s',
-                         '.phar' : 'phar extract -f %s'}
-
-    if any((archive.endswith(ext) for ext in cmd_template_dict)):
-        cmd = [cmd_template_dict[ext] % archive for ext in cmd_template_dict if archive.endswith(ext)][0]
-        return run_cmd(cmd, cwd=dirpath)[0]
-    elif archive.endswith('.tar.xz'):
-        return _unpack_archive_xz(archive, dirpath)
-    else:
-        raise ValueError('Format not supported')
 
 def unpack_archive_old(archive, dirpath, createdir=True):
     '''
@@ -124,7 +87,6 @@ def unpack_archive_old(archive, dirpath, createdir=True):
 
     if not osp.isdir(dirpath):
         if createdir:
-            #os.mkdir(dirpath)
             os.makedirs(dirpath)
         else:
             raise NotADirectoryException(dirpath)
@@ -154,6 +116,49 @@ def unpack_archive_old(archive, dirpath, createdir=True):
     else:
         raise ValueError('Format not supported')
 
+
+def unpack_archive(archive, dirpath, createdir=True):
+    '''
+    Unarchives/Extracts the file \'archive\' in the directory \'dirpath\'.
+    Expects \'dirpath\' to be already present.
+    Throws FileNotFoundException and NotADirectoryException if
+    archive or dirpath not found
+    ValueError if archive format is not supported.
+    '''
+
+    if not osp.isfile(archive):
+        raise FileNotFoundException(archive)
+
+    if not osp.isdir(dirpath):
+        if createdir:
+            os.makedirs(dirpath)
+        else:
+            raise NotADirectoryException(dirpath)
+
+    archive = osp.abspath(archive)
+    dirpath = osp.abspath(dirpath)
+
+    cmd_template_dict = {'.tar.gz':  'tar -x -z -f %s',
+                         '.tar.Z':  'tar -x -Z -f %s',
+                         '.tar.bz2':  'tar -x -j -f %s',
+                         '.tgz':  'tar -x -z -f %s',
+                         '.tar':  'tar -x -z -f %s',
+                         '.zip':  'unzip -qq -o %s',
+                         '.jar':  'unzip -qq -o %s',
+                         '.war':  'unzip -qq -o %s',
+                         '.ear':  'unzip -qq -o %s',
+                         '.phar': 'phar extract -f %s'}
+
+    if any((archive.endswith(ext) for ext in cmd_template_dict)):
+        cmd = [cmd_template_dict[ext] % archive
+               for ext in cmd_template_dict if archive.endswith(ext)][0]
+        return run_cmd(cmd, cwd=dirpath)[0]
+    elif archive.endswith('.tar.xz'):
+        return _unpack_archive_xz(archive, dirpath)
+    else:
+        raise ValueError('Format not supported')
+
+    
 def run_cmd(cmd,
             outfile=sys.stdout,
             errfile=sys.stderr,
@@ -194,14 +199,17 @@ def run_cmd(cmd,
         closefile(errfile, err)
         closefile(infile, inn)
 
+        
 def os_path_join(basepath, subdir):
     if subdir.startswith('/'):
         return osp.normpath(osp.join(basepath, subdir[1:]))
     else:
         return osp.normpath(osp.join(basepath, subdir))
 
+    
 def glob_glob(path, pattern):
     return glob.glob(os_path_join(path, pattern))
+
 
 def get_cpu_type():
     '64-bit or 32-bit'
@@ -211,21 +219,28 @@ def get_cpu_type():
     except subprocess.CalledProcessError:
         return None
 
+    
 def max_cmd_size():
-
-    #expr `getconf ARG_MAX` - `env|wc -c` - `env|wc -l` \* 4 - 2048
-    arg_max = subprocess.check_output(['getconf', 'ARG_MAX'])
-    arg_max = int(arg_max.decode(encoding='utf-8').strip())
-    if arg_max > 131072:
-        arg_max = 131072
+    # expr `getconf ARG_MAX` - `env|wc -c` - `env|wc -l` \* 4 - 2048
+    #arg_max = subprocess.check_output(['getconf', 'ARG_MAX'])
+    #arg_max = int(arg_max.decode(encoding='utf-8').strip())
+    #if arg_max > 131072:
+    arg_max = 131072
     env_len = len(''.join([str(k) + ' ' + str(os.environ[k]) for k in os.environ.keys()]))
     env_num = len(os.environ.keys()) # for null ptr
     arg_max = arg_max - env_len - env_num * 4 - 2048 # extra caution
     return arg_max
 
+
+def max_cmd_size_new():
+    cmd = 'expr `getconf ARG_MAX` - `env|wc -c` - `env|wc -l` \* 4 - 2048'
+    return int(subprocess.check_output(cmd, shell=True).decode(encoding='utf-8').strip())
+
+
 def platform():
     platname = os.uname()
     return platname[3] if(isinstance(platname, tuple)) else platname.version
+
 
 def write_to_file(filename, obj):
     '''write a dictionary or list object to a file'''
@@ -242,6 +257,7 @@ def write_to_file(filename, obj):
 
 
 PARAM_REGEX = re.compile(r'<(?P<name>[a-zA-Z][a-zA-Z_-]*)(?:[%](?P<sep>[^>]+))?>')
+
 
 def string_substitute(string_template, symbol_table):
     '''Substitues environment variables and
@@ -270,15 +286,19 @@ def string_substitute(string_template, symbol_table):
 
     return osp.expandvars(new_str)
 
+
 def expandvar(var, kwargs):
     return string_substitute(var, kwargs)
+
 
 def rmfile(filename):
     if osp.isfile(filename):
         os.remove(filename)
 
-#Copied from Python3.3 Standard Libary shlex.py
+        
+# Copied from Python3.3 Standard Libary shlex.py
 _find_unsafe = re.compile(r'[^\w@%+=:,./-]', re.ASCII).search
+
 
 def _quote(s):
     """Return a shell-escaped version of the string *s*."""
@@ -291,14 +311,17 @@ def _quote(s):
     # the string $'b is then quoted as '$'"'"'b'
     return "'" + s.replace("'", "'\"'\"'") + "'"
 
+
 def quote_str(s):
     if hasattr(shlex, 'quote'):
         return shlex.quote(s)
     else:
         return _quote(s)
 
+    
 def get_uuid():
     return str(uuid.uuid4())
+
 
 def ordered_list(_list):
 
@@ -314,8 +337,9 @@ def ordered_list(_list):
 
 ######
 
-FileFilters = namedtuple('FileFilters', ['exclude_dirs', 'exclude_files', \
+FileFilters = namedtuple('FileFilters', ['exclude_dirs', 'exclude_files',
                                          'include_dirs', 'include_files'])
+
 
 def expand_patterns(root_dir, pattern_list):
     for pattern in pattern_list:
@@ -330,6 +354,7 @@ def expand_patterns(root_dir, pattern_list):
         else:
             yield glob_glob(root_dir, pattern)
 
+
 def get_file_filters(root_dir, patterns):
     '''Returns an FileFilters object'''
 
@@ -340,14 +365,15 @@ def get_file_filters(root_dir, patterns):
     elif patterns is None:
         patterns = []
 
-    patterns = {p.strip().strip('\n') for p in patterns \
+    patterns = {p.strip().strip('\n') for p in patterns
                 if p and not p.isspace() and not p.strip().startswith('#')}
 
     ex_dir_list = set()
     ex_file_list = set()
 
-    for fileset in expand_patterns(root_dir, (p for p in patterns \
-                                              if not p.startswith('!'))):
+    for fileset in expand_patterns(root_dir,
+                                   (p for p in patterns
+                                    if not p.startswith('!'))):
         if fileset:
             for _file in fileset:
                 if osp.isdir(_file):
@@ -358,8 +384,9 @@ def get_file_filters(root_dir, patterns):
     in_dir_list = set()
     in_file_list = set()
 
-    for fileset in expand_patterns(root_dir, (p[1:] for p in patterns \
-                                              if p.startswith('!'))):
+    for fileset in expand_patterns(root_dir,
+                                   (p[1:] for p in patterns
+                                    if p.startswith('!'))):
         if fileset:
             for _file in fileset:
                 if osp.isdir(_file):
@@ -369,6 +396,7 @@ def get_file_filters(root_dir, patterns):
 
     return FileFilters(ex_dir_list, ex_file_list, in_dir_list, in_file_list)
 
+
 def filter_out(root_dir, file_filters, file_types):
     '''
     This is a generator function.
@@ -376,9 +404,9 @@ def filter_out(root_dir, file_filters, file_types):
     file_filters.exclude_files and hidden (begin with .) are ignored
     '''
 
-    is_dirpath_in = lambda dirpath, dir_list: \
-                    any(dirpath.startswith(path) for path in dir_list) \
-                    if dir_list else False
+    def is_dirpath_in(dirpath, dir_list):
+        return any(dirpath.startswith(path) for path in dir_list) \
+            if dir_list else False
 
     hidden_dir_list = []
 
@@ -386,11 +414,11 @@ def filter_out(root_dir, file_filters, file_types):
 
         if osp.basename(dirpath).startswith('.'):
             hidden_dir_list.append(dirpath)
-        elif not (is_dirpath_in(osp.join(dirpath, ''), file_filters.exclude_dirs) or \
+        elif not (is_dirpath_in(osp.join(dirpath, ''), file_filters.exclude_dirs) or
                   is_dirpath_in(osp.join(dirpath, ''), hidden_dir_list)):
-            filepaths = {osp.normpath(osp.join(dirpath, _file)) \
-                         for _file in filenames \
-                         if not _file.startswith('.') and \
+            filepaths = {osp.normpath(osp.join(dirpath, _file))
+                         for _file in filenames
+                         if not _file.startswith('.') and
                          (osp.splitext(_file)[1] in file_types)}
             filepaths = filepaths.difference(file_filters.exclude_files)
             if filepaths:
@@ -403,7 +431,6 @@ def filter_in(file_filters, file_types):
     This is a generator function.
     '''
 
-
     for include_dir in file_filters.include_dirs:
         for dirpath, _, filenames in os.walk(include_dir):
             for _file in filenames:
@@ -415,6 +442,7 @@ def filter_in(file_filters, file_types):
            osp.splitext(_file)[1] in file_types:
             yield _file
 
+            
 def get_file_list(root_dir, patterns, file_types):
 
     file_filters = get_file_filters(root_dir, patterns)
@@ -425,18 +453,18 @@ def get_file_list(root_dir, patterns, file_types):
 
     return file_list
 
+
 def filter_file_list(file_list, root_dir, patterns):
 
     file_filters = get_file_filters(root_dir, patterns)
 
     new_file_list = set(file_list).difference(file_filters.exclude_files)
 
-    is_file_in = lambda filepath, dir_list: \
-                 any(filepath.startswith(osp.join(path, '')) \
-                     for path in dir_list) \
-                     if dir_list else False
+    def is_file_in(filepath, dir_list):
+        return any(filepath.startswith(osp.join(path, ''))
+                   for path in dir_list) if dir_list else False
 
-    new_file_list = new_file_list.difference({_file for _file in new_file_list \
+    new_file_list = new_file_list.difference({_file for _file in new_file_list
                                               if is_file_in(_file, file_filters.exclude_dirs)})
 
     return list(new_file_list)

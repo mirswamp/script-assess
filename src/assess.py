@@ -605,7 +605,7 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
 
     if tool_conf['tool-type'] == 'flow':
         swatool = Flow(input_root_dir, tool_root_dir)
-    elif tool_conf['tool-type'] in ['phpcs', 'phpmd']:
+    elif tool_conf['tool-type'] in ['php_codesniffer', 'phpmd']:
         swatool = PhpTool(input_root_dir, tool_root_dir)
     elif tool_conf['tool-type'] in ['cloc', 'lizard']:
         swatool = WebTool(input_root_dir, tool_root_dir)

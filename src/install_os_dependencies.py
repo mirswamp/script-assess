@@ -39,7 +39,7 @@ def install(input_dir):
                     status_dot_out.skip_task('None')
                     logging.info('This platform needs no additional packages to be installed')
             else:
-                status_dot_out.skip_task('None')
+                status_dot_out.skip_task('none')
                 logging.info('The current platform %s not present in the file %s',
                              this_platform_deps,
                              os_deps_file)

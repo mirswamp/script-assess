@@ -86,24 +86,6 @@ function main {
 	cp $PWD/release/{LICENSE.txt,RELEASE_NOTES.txt} "$dest_dir"
 
 	md5_sum "$dest_dir"
-	return 0
-	
-	for other_plat in $(cat ~/bin/resources/all_platforms.txt | fgrep -v "$main_plat" ); do
-		mkdir -p $dest_dir/$other_plat/{in-files,swamp-conf}
-
-		for sub_dir in in-files swamp-conf; do
-			(
-				cd $dest_dir/$other_plat/$sub_dir
-				find ../../$main_plat/$sub_dir -type f -exec ln -s '{}' ';'
-			)
-		done
-	done
-
-	for plat in $(cat ~/bin/resources/all_platforms.txt); do
-		local rvm="$PWD/ruby-binaries/ruby-binary---$plat/rvm.tar.gz"
-		[[ -f "$rvm" ]] && cp "$rvm" "$dest_dir/$plat/in-files"
-	done
-
 }
 
 function copy_scripts {
@@ -140,9 +122,9 @@ function copy_scripts {
 
 	cp -r $PWD/lib/* "$lib_dir"
 
-	local ruby_assess_dir="$lib_dir/js_assess"
-	mkdir $ruby_assess_dir
-	cp -r $PWD/src/* $ruby_assess_dir
+	local script_assess_dir="$lib_dir/script_assess"
+	mkdir $script_assess_dir
+	cp -r $PWD/src/* $script_assess_dir
 
 	local version_dir="$lib_dir/version"
 	mkdir -p $version_dir
@@ -152,13 +134,13 @@ function copy_scripts {
 	(
 		cd "$(dirname $scripts_dir)"
 		tar -c -z --file="$(basename $scripts_dir)"".tar.gz" "$(basename $scripts_dir)"
-		if test $? -eq 0; then
+		if [[ $? -eq 0 ]]; then
 			rm -rf "$(basename $scripts_dir)"
 		fi
 	)
 }
 
-if test $# -ne 2; then
+if [[ $# -ne 2 ]]; then
     echo "need a destination directory and a version an argument"
     exit 1
 fi
