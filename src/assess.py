@@ -319,10 +319,10 @@ class WebTool(SwaTool):
         no_artifacts = True
         for file_type in set(tokens).intersection(set(JsPkg.LANG_EXT_MAPPING.keys())):
             if file_type in artifacts and len(artifacts[file_type]):
-                found_artifacts = False
+                no_artifacts = False
                 break
 
-        return found_artifacts
+        return no_artifacts
 
     def __init__(self, input_root_dir, tool_root_dir):
         SwaTool.__init__(self, input_root_dir, tool_root_dir)
