@@ -312,14 +312,14 @@ class WebTool(SwaTool):
     FILE_TYPE = 'srcfile'
 
     @classmethod
-    def _has_artifacts(cls, invoke_file, artifacts):
+    def _has_no_artifacts(cls, invoke_file, artifacts):
         ''' Each tool works on certain types of files such as html, css, javascript '''
         tokens = gencmd.get_param_list(invoke_file)
 
-        found_artifacts = False
+        no_artifacts = True
         for file_type in set(tokens).intersection(set(JsPkg.LANG_EXT_MAPPING.keys())):
             if file_type in artifacts and len(artifacts[file_type]):
-                found_artifacts = True
+                found_artifacts = False
                 break
 
         return found_artifacts
@@ -434,7 +434,7 @@ class WebTool(SwaTool):
                                    'swa_tool_stderr{0}.out'.format(artifacts['build-artifact-id']))
 
                 invoke_file = osp.join(self.input_root_dir, artifacts['tool-invoke'])
-                skip_assess = WebTool._has_artifacts(invoke_file, artifacts)
+                skip_assess = WebTool._has_no_artifacts(invoke_file, artifacts)
                 
                 start_time = utillib.posix_epoch()
 
