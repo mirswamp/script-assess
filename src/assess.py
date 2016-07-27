@@ -317,7 +317,7 @@ class WebTool(SwaTool):
         tokens = gencmd.get_param_list(invoke_file)
 
         found_artifacts = False
-        for file_type in set(tokens).difference(set(JsPkg.LANG_EXT_MAPPING.keys())):
+        for file_type in set(tokens).intersection(set(JsPkg.LANG_EXT_MAPPING.keys())):
             if file_type in artifacts and len(artifacts[file_type]):
                 found_artifacts = True
                 break
