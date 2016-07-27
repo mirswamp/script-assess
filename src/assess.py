@@ -313,11 +313,17 @@ class WebTool(SwaTool):
 
     @classmethod
     def _has_no_artifacts(cls, invoke_file, artifacts):
-        ''' Each tool works on certain types of files such as html, css, javascript '''
-        tokens = gencmd.get_param_list(invoke_file)
+        ''' Each tool works on certain types of files such as html, css, javascript.
+        This method takes the invoke_file for the tool and checks if artifacts 
+        required by the tool are present in the package'''
 
+        all_lang = set(JsPkg.LANG_EXT_MAPPING.keys())
+        all_lang.add(WebTool.FILE_TYPE)
+        
+        tokens = gencmd.get_param_list(invoke_file)
+        
         no_artifacts = True
-        for file_type in set(tokens).intersection(set(JsPkg.LANG_EXT_MAPPING.keys())):
+        for file_type in set(tokens).intersection(all_lang):
             if file_type in artifacts and len(artifacts[file_type]):
                 no_artifacts = False
                 break
@@ -639,8 +645,9 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
 
             if passed == 0 and failed == 0:
                 exit_code = 0
-                status_dot_out.skip_task(task_msg=None,
-                                         task_msg_indetail="No relavent files found to run '%s'" % tool_conf['tool-type'])
+                status_dot_out.skip_task(task_msg='no files')
+                # status_dot_out.skip_task(task_msg=None,
+                # task_msg_indetail="No relavent files found to run '%s'" % tool_conf['tool-type'])
             else:
                 exit_code = 1 if(failed) else 0
                 status_dot_out.update_task_status(exit_code,
