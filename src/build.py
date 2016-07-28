@@ -146,7 +146,7 @@ class BuildSummaryJavascript(BuildSummary):
         build_artifacts_xml = BuildSummary._add(self._root, 'build-artifacts')
         web_xml = BuildSummary._add(build_artifacts_xml, 'web-src')
 
-        for lang, ext in JsPkg.LANG_EXT_MAPPING.items():
+        for lang, ext in WebPkg.LANG_EXT_MAPPING.items():
             if isinstance(ext, str):
                 files = [_file for _file in fileset
                          if osp.splitext(_file)[1] == ext]
@@ -187,7 +187,7 @@ class BuildSummaryJavascript(BuildSummary):
             self._add_file_set(web_xml, 'xml', xml_fileset)
 
 
-class JsPkg:
+class WebPkg:
 
     PKG_ROOT_DIRNAME = "pkg1"
     WEB_FILE_TYPES = ['.js', '.html', '.css', '.xml']
@@ -203,7 +203,7 @@ class JsPkg:
 
         ext_list = []
         for lang in pkg_lang.split():
-            ext = JsPkg.LANG_EXT_MAPPING[lang.lower()]
+            ext = WebPkg.LANG_EXT_MAPPING[lang.lower()]
             if isinstance(ext, str):
                 ext_list.append(ext)
             else:
@@ -221,7 +221,7 @@ class JsPkg:
     @classmethod
     def run_cmd(cls, cmd, cwd, outfile, errfile, description, shell=False):
 
-        environ = JsPkg.get_env(cwd)
+        environ = WebPkg.get_env(cwd)
 
         logging.info('%s COMMAND %s', description, cmd)
 
@@ -245,7 +245,7 @@ class JsPkg:
 
         with LogTaskStatus('package-unarchive'):
             pkg_archive = osp.join(input_root_dir, self.pkg_conf['package-archive'])
-            pkg_root_dir = osp.join(build_root_dir, JsPkg.PKG_ROOT_DIRNAME)
+            pkg_root_dir = osp.join(build_root_dir, WebPkg.PKG_ROOT_DIRNAME)
             status = utillib.unpack_archive(pkg_archive, pkg_root_dir, True)
 
             if status != 0:
@@ -275,7 +275,7 @@ class JsPkg:
                 outfile = osp.join(build_root_dir, 'config_stdout.out')
                 errfile = osp.join(build_root_dir, 'config_stderr.out')
 
-                (exit_code, environ) = JsPkg.run_cmd(config_cmd,
+                (exit_code, environ) = WebPkg.run_cmd(config_cmd,
                                                      config_dir,
                                                      outfile,
                                                      errfile,
@@ -302,7 +302,7 @@ class JsPkg:
         raise NotImplementedError()
 
 
-class JsNodePkg(JsPkg):
+class JsNodePkg(WebPkg):
 
     def get_nodejs_files(self, pkg_dir):
 
@@ -335,18 +335,18 @@ class JsNodePkg(JsPkg):
                               for f in pkg_json['files']]:
                     if osp.isdir(_file):
                         fileset.update(utillib.get_file_list(_file, None,
-                                                             JsPkg.get_file_types(self.pkg_conf['package-language'])))
+                                                             WebPkg.get_file_types(self.pkg_conf['package-language'])))
                     else:
                         fileset.add(_file)
             else:
                 fileset.update(utillib.get_file_list(pkg_dir,
                                                      npm_ignore_list(),
-                                                     JsPkg.get_file_types(self.pkg_conf['package-language'])))
+                                                     WebPkg.get_file_types(self.pkg_conf['package-language'])))
 
         return fileset
 
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
-        JsPkg.__init__(self, pkg_conf_file, input_root_dir, build_root_dir)
+        WebPkg.__init__(self, pkg_conf_file, input_root_dir, build_root_dir)
 
     def is_a_node_pkg(self, pkg_dir):
         return True if (self.pkg_conf['build-sys'] == 'npm' and
@@ -362,7 +362,7 @@ class JsNodePkg(JsPkg):
         else:
             fileset.update(utillib.get_file_list(pkg_dir,
                                                  None,
-                                                 JsPkg.get_file_types(self.pkg_conf['package-language'])))
+                                                 WebPkg.get_file_types(self.pkg_conf['package-language'])))
 
         fileset = fileset.difference(file_filters.exclude_files)
 
@@ -375,7 +375,7 @@ class JsNodePkg(JsPkg):
     def build(self, build_root_dir):
 
         with BuildSummaryJavascript(build_root_dir,
-                                    JsPkg.PKG_ROOT_DIRNAME,
+                                    WebPkg.PKG_ROOT_DIRNAME,
                                     self.pkg_conf) as build_summary:
 
             self._configure(build_root_dir, build_summary)
@@ -397,7 +397,7 @@ class JsNodePkg(JsPkg):
                 outfile = osp.join(build_root_dir, 'build_stdout.out')
                 errfile = osp.join(build_root_dir, 'build_stderr.err')
 
-                exit_code, environ = JsPkg.run_cmd(build_cmd, pkg_build_dir,
+                exit_code, environ = WebPkg.run_cmd(build_cmd, pkg_build_dir,
                                                    outfile, errfile, "BUILD")
 
                 build_summary.add_command('build', build_cmd,

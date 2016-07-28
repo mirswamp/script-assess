@@ -12,7 +12,7 @@ from . import utillib
 from . import confreader
 from .logger import LogTaskStatus
 from .utillib import UnpackArchiveError
-from .build import JsPkg
+from .build import WebPkg
 
 
 class ToolInstallFailedError(Exception):
@@ -68,7 +68,7 @@ class BuildArtifactsHelper:
 
         for elem in xml_elem:
             # ['javascript', 'html', 'css', 'xml']:
-            if elem.tag in JsPkg.LANG_EXT_MAPPING.keys():
+            if elem.tag in WebPkg.LANG_EXT_MAPPING.keys():
                 fileset = BuildArtifactsHelper._get_fileset(artifacts['build-root-dir'],
                                                             elem)
                 artifacts[elem.tag] = fileset
@@ -312,18 +312,24 @@ class WebTool(SwaTool):
     FILE_TYPE = 'srcfile'
 
     @classmethod
+    def _tool_target_artifacts(cls, invoke_file):
+        ''' Each tool works on certain types of files such as html, css, javascript.
+        This method takes the invoke_file for the tool and return that target 
+        artifacts the tools works on'''
+
+        all_lang = set(WebPkg.LANG_EXT_MAPPING.keys())
+        all_lang.add(WebTool.FILE_TYPE)  # to add 'srcfile'
+        tokens = gencmd.get_param_list(invoke_file)
+        return list(set(tokens).intersection(all_lang))
+
+    @classmethod
     def _has_no_artifacts(cls, invoke_file, artifacts):
         ''' Each tool works on certain types of files such as html, css, javascript.
         This method takes the invoke_file for the tool and checks if artifacts 
         required by the tool are present in the package'''
 
-        all_lang = set(JsPkg.LANG_EXT_MAPPING.keys())
-        all_lang.add(WebTool.FILE_TYPE)
-
-        tokens = gencmd.get_param_list(invoke_file)
-
         no_artifacts = True
-        for file_type in set(tokens).intersection(all_lang):
+        for file_type in cls._tool_target_artifacts(invoke_file):
             if file_type in artifacts and len(artifacts[file_type]):
                 no_artifacts = False
                 break
