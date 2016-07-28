@@ -336,40 +336,8 @@ class WebTool(SwaTool):
 
         return no_artifacts
 
-    def __init__(self, input_root_dir, tool_root_dir):
-        SwaTool.__init__(self, input_root_dir, tool_root_dir)
-
-    def _split_build_artifacts(self, artifacts):
-        '''Splits only if required'''
-
-        # returns list of list
-        split_required, max_allowed_size = self._split_artifacts_required(artifacts)
-        if split_required:
-            split_file_lists = list()
-
-            self._split_list(split_file_lists,
-                             artifacts[self.FILE_TYPE],
-                             max_allowed_size)
-
-            artifacts.pop(self.FILE_TYPE)
-            artifacts_list = list()
-
-            id_count = 1
-            for filelist in split_file_lists:
-                new_artifacts = dict(artifacts)
-                new_artifacts[self.FILE_TYPE] = filelist
-                new_artifacts['build-artifact-id'] = '{0}-{1}'.format(new_artifacts['id'],
-                                                                      str(id_count))
-                new_artifacts['assessment-report'] = osp.join(new_artifacts['results-root-dir'],
-                                                              self._tool_conf['assessment-report-template'].format(new_artifacts['build-artifact-id']))
-                id_count += 1
-                artifacts_list.append(new_artifacts)
-
-            return artifacts_list
-        else:
-            return [artifacts]
-
-    def _split_artifacts_required(self, artifacts):
+    @classmethod
+    def _split_artifacts_required(cls, tool_invoke_file, artifacts):
         '''returns a tuple with key in attribute and an integer corresponding
         to the size '''
 
@@ -377,23 +345,65 @@ class WebTool(SwaTool):
             return len(' '.join(gencmd.gencmd(invoke_file, _dict)))
 
         artifacts_local = dict(artifacts)
-        tool_invoke_file = osp.join(self.input_root_dir,
-                                    artifacts['tool-invoke'])
 
         if get_cmd_size(tool_invoke_file, artifacts_local) > utillib.max_cmd_size():
-            artifacts_local.pop(self.FILE_TYPE)
+
+            # Removing all the artifacts that the tool works on
+            [None for m in map(artifacts_local.pop,
+                               WebTool._tool_target_artifacts(tool_invoke_file))]
+
             max_allowed_size = utillib.max_cmd_size() - get_cmd_size(tool_invoke_file,
                                                                      artifacts_local)
             return (True, max_allowed_size)
         else:
             return (False, 0)
 
-    def _split_list(self, llist, filelist, max_args_size):
-        if len(' '.join(filelist)) > max_args_size:
-            self._split_list(llist, filelist[0:int(len(filelist) / 2)], max_args_size)
-            self._split_list(llist, filelist[int(len(filelist) / 2):], max_args_size)
+    @classmethod
+    def _split_list(cls, filelist, max_args_size):
+
+        def split(llist, filelist, max_args_size):
+            if len(' '.join(filelist)) > max_args_size:
+                split(llist, filelist[0:int(len(filelist) / 2)], max_args_size)
+                split(llist, filelist[int(len(filelist) / 2):], max_args_size)
+            else:
+                llist.append(filelist)
+
+        list_of_lists = list()
+        split(list_of_lists, filelist, max_args_size)
+        return list_of_lists
+
+    def __init__(self, input_root_dir, tool_root_dir):
+        SwaTool.__init__(self, input_root_dir, tool_root_dir)
+
+    def _split_build_artifacts(self, artifacts):
+        '''Splits only if required'''
+
+        tool_invoke_file = osp.join(self.input_root_dir,
+                                    artifacts['tool-invoke'])
+
+        (split_required,
+         max_allowed_size) = WebTool._split_artifacts_required(tool_invoke_file,
+                                                               artifacts)
+        if split_required:
+            tool_target_artifacts = WebTool._tool_target_artifacts(tool_invoke_file)
+            target_artifacts = {k: v for k, v in artifacts.items()
+                                if k in tool_target_artifacts and len(k)}
+            # Remove tool_target_artifacts from the dictionary, split and add them later
+            [None for m in map(artifacts.pop, tool_target_artifacts)]
+
+            id_count = 1
+            for file_type in target_artifacts.keys():
+                for filelist in WebTool._split_list(target_artifacts[file_type], max_allowed_size):
+                    new_artifacts = dict(artifacts)
+                    new_artifacts[file_type] = filelist
+                    new_artifacts['build-artifact-id'] = '{0}-{1}'.format(new_artifacts['id'],
+                                                                          str(id_count))
+                    new_artifacts['assessment-report'] = osp.join(new_artifacts['results-root-dir'],
+                                                                  self._tool_conf['assessment-report-template'].format(new_artifacts['build-artifact-id']))
+                    id_count += 1
+                    yield new_artifacts
         else:
-            llist.append(filelist)
+            yield artifacts
 
     def _get_build_artifacts(self, build_artifacts_helper, results_root_dir):
 
