@@ -71,6 +71,7 @@ def main(input_dir,
 
     return exit_code
 
+
 def _build_assess_parse(goal, input_root_dir, output_root_dir,
                         build_root_dir, tool_root_dir,
                         results_root_dir):

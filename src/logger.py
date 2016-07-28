@@ -6,6 +6,7 @@ import sys
 import time
 import textwrap
 
+
 class StreamHandlerCustom(logging.StreamHandler):
 
     def __init__(self, stream=None):
@@ -14,6 +15,7 @@ class StreamHandlerCustom(logging.StreamHandler):
     def handle(self, record):
         super().handle(record)
         self.flush()
+
 
 def init(output_dir=os.getcwd()):
 
@@ -43,6 +45,7 @@ def init(output_dir=os.getcwd()):
     logging.getLogger('.status-logger').propagate = False
 
     logging.getLogger('.status-logger').log(60, 'NOTE: begin')
+
 
 def shutdown():
     logging.getLogger('.status-logger').log(60, 'NOTE: end')
@@ -106,7 +109,7 @@ class LogTaskStatus():
              Multiline Message
              ----------
         '''
-        sep = '-'*10
+        sep = '-' * 10
         return '''  {0}\n  {1}\n  {0}'''.format(sep, self.textwrapper.fill(task_msg_indetail))
 
     def skip_task(self, task_msg=None, task_msg_indetail=None):
@@ -135,7 +138,6 @@ class LogTaskStatus():
                                                                     self.task_msg,
                                                                     self.end_time - self.start_time))
 
-
         if self.task_msg_indetail:
             logging.getLogger('.status-logger').log(60,
                                                     self.get_formatted_msg(self.task_msg_indetail))
@@ -148,4 +150,3 @@ class LogTaskStatus():
             self.update_task_status(exit_status, None, str(value))
 
         self.write()
-

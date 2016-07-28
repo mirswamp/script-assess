@@ -35,7 +35,7 @@ else:
     class IsADirectoryException(OSError):
         pass
 
-    
+
 class UnpackArchiveError(Exception):
 
     def __init__(self, filename):
@@ -138,15 +138,15 @@ def unpack_archive(archive, dirpath, createdir=True):
     archive = osp.abspath(archive)
     dirpath = osp.abspath(dirpath)
 
-    cmd_template_dict = {'.tar.gz':  'tar -x -z -f %s',
-                         '.tar.Z':  'tar -x -Z -f %s',
-                         '.tar.bz2':  'tar -x -j -f %s',
-                         '.tgz':  'tar -x -z -f %s',
-                         '.tar':  'tar -x -z -f %s',
-                         '.zip':  'unzip -qq -o %s',
-                         '.jar':  'unzip -qq -o %s',
-                         '.war':  'unzip -qq -o %s',
-                         '.ear':  'unzip -qq -o %s',
+    cmd_template_dict = {'.tar.gz': 'tar -x -z -f %s',
+                         '.tar.Z': 'tar -x -Z -f %s',
+                         '.tar.bz2': 'tar -x -j -f %s',
+                         '.tgz': 'tar -x -z -f %s',
+                         '.tar': 'tar -x -z -f %s',
+                         '.zip': 'unzip -qq -o %s',
+                         '.jar': 'unzip -qq -o %s',
+                         '.war': 'unzip -qq -o %s',
+                         '.ear': 'unzip -qq -o %s',
                          '.phar': 'phar extract -f %s'}
 
     if any((archive.endswith(ext) for ext in cmd_template_dict)):
@@ -158,7 +158,7 @@ def unpack_archive(archive, dirpath, createdir=True):
     else:
         raise ValueError('Format not supported')
 
-    
+
 def run_cmd(cmd,
             outfile=sys.stdout,
             errfile=sys.stderr,
@@ -168,7 +168,7 @@ def run_cmd(cmd,
             env=None):
     '''argument cmd should be a list'''
     openfile = lambda filename, mode: \
-               open(filename, mode) if(isinstance(filename, str)) else filename
+        open(filename, mode) if(isinstance(filename, str)) else filename
 
     out = openfile(outfile, 'w')
     err = openfile(errfile, 'w')
@@ -194,19 +194,19 @@ def run_cmd(cmd,
         return (err.returncode, environ)
     finally:
         closefile = lambda filename, fileobj: \
-                    fileobj.close() if(isinstance(filename, str)) else None
+            fileobj.close() if(isinstance(filename, str)) else None
         closefile(outfile, out)
         closefile(errfile, err)
         closefile(infile, inn)
 
-        
+
 def os_path_join(basepath, subdir):
     if subdir.startswith('/'):
         return osp.normpath(osp.join(basepath, subdir[1:]))
     else:
         return osp.normpath(osp.join(basepath, subdir))
 
-    
+
 def glob_glob(path, pattern):
     return glob.glob(os_path_join(path, pattern))
 
@@ -219,16 +219,16 @@ def get_cpu_type():
     except subprocess.CalledProcessError:
         return None
 
-    
+
 def max_cmd_size():
     # expr `getconf ARG_MAX` - `env|wc -c` - `env|wc -l` \* 4 - 2048
     #arg_max = subprocess.check_output(['getconf', 'ARG_MAX'])
     #arg_max = int(arg_max.decode(encoding='utf-8').strip())
-    #if arg_max > 131072:
+    # if arg_max > 131072:
     arg_max = 131072
     env_len = len(''.join([str(k) + ' ' + str(os.environ[k]) for k in os.environ.keys()]))
-    env_num = len(os.environ.keys()) # for null ptr
-    arg_max = arg_max - env_len - env_num * 4 - 2048 # extra caution
+    env_num = len(os.environ.keys())  # for null ptr
+    arg_max = arg_max - env_len - env_num * 4 - 2048  # extra caution
     return arg_max
 
 
@@ -295,7 +295,7 @@ def rmfile(filename):
     if osp.isfile(filename):
         os.remove(filename)
 
-        
+
 # Copied from Python3.3 Standard Libary shlex.py
 _find_unsafe = re.compile(r'[^\w@%+=:,./-]', re.ASCII).search
 
@@ -318,7 +318,7 @@ def quote_str(s):
     else:
         return _quote(s)
 
-    
+
 def get_uuid():
     return str(uuid.uuid4())
 
@@ -442,7 +442,7 @@ def filter_in(file_filters, file_types):
            osp.splitext(_file)[1] in file_types:
             yield _file
 
-            
+
 def get_file_list(root_dir, patterns, file_types):
 
     file_filters = get_file_filters(root_dir, patterns)
@@ -468,4 +468,3 @@ def filter_file_list(file_list, root_dir, patterns):
                                               if is_file_in(_file, file_filters.exclude_dirs)})
 
     return list(new_file_list)
-

@@ -1,11 +1,14 @@
 import re
 import sys
 
+
 class NoMoreLinesError(Exception):
     pass
 
+
 class NoMoreCharsError(Exception):
     pass
+
 
 def read_lines(fobj, nlines):
 
@@ -14,11 +17,13 @@ def read_lines(fobj, nlines):
     except StopIteration:
         raise NoMoreLinesError()
 
+
 def read_chars(fobj, nchars):
     try:
         return ''.join([fobj.read(1) for i in range(0, nchars)])
     except StopIteration:
         raise NoMoreCharsError()
+
 
 def read_conf_into_dict(filename):
 
@@ -44,7 +49,7 @@ def read_conf_into_dict(filename):
                         m4 = re4.match(line)
                         key = m4.groupdict()['key']
                         nlines = int(m4.groupdict()['numlines'])
-                        value = m4.groupdict()['value'] + '\n' + read_lines(fobj, nlines-1)
+                        value = m4.groupdict()['value'] + '\n' + read_lines(fobj, nlines - 1)
                         conf_dict[key] = value.strip('\n')
 
                     # multiple characters
@@ -54,7 +59,7 @@ def read_conf_into_dict(filename):
                         nchars = int(m3.groupdict()['numchars'])
                         value = m3.groupdict()['value']
                         if nchars > len(value):
-                            value = value + '\n' + read_chars(fobj, nchars-len(value)-1)
+                            value = value + '\n' + read_chars(fobj, nchars - len(value) - 1)
                             conf_dict[key] = value.strip('\n')
                         elif nchars == len(value):
                             conf_dict[key] = value.strip('\n')
@@ -75,7 +80,7 @@ def read_conf_into_dict(filename):
                         key = m1.groupdict()['key']
                         value = m1.groupdict()['value']
                         value = value.strip('\n').strip()
-                        #for quoted string
+                        # for quoted string
                         if value.startswith("'") and value.endswith("'"):
                             #value = quote_str(value[1:-1])
                             value = value[1:-1]
@@ -87,6 +92,7 @@ def read_conf_into_dict(filename):
         except StopIteration:
             pass
     return conf_dict
+
 
 def main(filepath):
     conf_dict = read_conf_into_dict(filepath)

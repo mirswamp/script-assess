@@ -6,8 +6,10 @@ from .logger import LogTaskStatus
 from . import utillib
 from . import confreader
 
+
 class InstallOSDependenciesFailedError(Exception):
     pass
+
 
 def install(input_dir):
     '''Raises InstallOSDependenciesFailedError if fails'''
@@ -45,5 +47,3 @@ def install(input_dir):
                              os_deps_file)
 
     return exit_code
-
-

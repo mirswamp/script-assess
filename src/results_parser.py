@@ -118,7 +118,7 @@ def parse_results(input_dir, assessment_summary_file, results_dir, output_dir):
             else:
                 status_dot_out.update_task_status(exit_code,
                                                   'Results Parser returned Exit Code: {0}'.format(exit_code))
-    #NOTE: Not sure which part of the code will throw an exception. Handling exception map not be required
+    # NOTE: Not sure which part of the code will throw an exception. Handling exception map not be required
     except Exception as err:
         logging.exception(err)
         exit_code = 1

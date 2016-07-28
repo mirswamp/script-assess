@@ -7,6 +7,7 @@ from . import swamp
 from . import cli_argparse
 from . import logger
 
+
 def main():
     clargs = cli_argparse.process_cmd_line_args()
 
@@ -33,9 +34,8 @@ def main():
         sys.exit(exit_code)
     finally:
         logger.shutdown()
-        #os.environ.pop('SCRIPTS_DIR')
+        # os.environ.pop('SCRIPTS_DIR')
         os.environ.pop('TOOL_DIR')
 
 if __name__ == '__main__':
     main()
-

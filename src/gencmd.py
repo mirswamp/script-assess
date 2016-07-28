@@ -21,13 +21,15 @@ t_PARAM = r'<[a-zA-Z][a-zA-Z0-9_-]*(?:[%][^>]+)?>'
 t_SEPERATER = r'[:=/]'
 t_OPTIONNAME = r'(-{1,2}|[+])[a-zA-Z][a-zA-Z0-9]*(?:[_.-]?[a-zA-Z0-9]+)*'
 t_STRING = r'[\w\d\.-]+'
-t_ignore = ' \t\v\r' # whitespace
+t_ignore = ' \t\v\r'  # whitespace
+
 
 def t_NEWLINE(t):
     r'\n+'
     t.lexer.lineno = len(t.value)
     t.value = '\n'
     return t
+
 
 def t_error(t):
     logging.error("Lexer: Illegal character " + t.value)
@@ -37,6 +39,7 @@ lexer = lex.lex(lextab='gencmd_lextab',
                 debuglog=logging.getLogger(''),
                 errorlog=logging.getLogger(''))
 
+
 def _get_string(arg):
     '''arg : can be a filename or string'''
 
@@ -45,6 +48,7 @@ def _get_string(arg):
             return ''.join(f)
     else:
         return arg
+
 
 def tokenize(input_str):
     '''
@@ -61,9 +65,11 @@ def tokenize(input_str):
             result.append((tok.type, tok.value))
     return result
 
+
 def p_command(p):
     '''command : executable NEWLINE args'''
     p[0] = ('command', p[1], p[3])
+
 
 def p_executable(p):
     '''executable : param
@@ -72,13 +78,16 @@ def p_executable(p):
     '''
     p[0] = p[1]
 
+
 def p_args(p):
     '''args : arg NEWLINE args '''
     p[0] = [p[1]] + p[3]
 
+
 def p_args_empty(p):
     '''args : empty'''
     p[0] = []
+
 
 def p_arg(p):
     '''arg : option
@@ -88,25 +97,31 @@ def p_arg(p):
     '''
     p[0] = p[1]
 
+
 def p_string(p):
     '''string : STRING'''
     p[0] = ('string', p[1])
+
 
 def p_quotedstring(p):
     '''quotedstring : QSTRING'''
     p[0] = ('quotedstring', p[1])
 
+
 def p_option(p):
     '''option : OPTIONNAME'''
     p[0] = ('option', p[1], None, None)
+
 
 def p_option_value(p):
     '''option : OPTIONNAME optionarg'''
     p[0] = ('option', p[1], None, p[2])
 
+
 def p_option_sep_value(p):
     '''option : OPTIONNAME SEPERATER optionarg'''
     p[0] = ('option', p[1], p[2], p[3])
+
 
 def p_optionarg(p):
     '''optionarg : param
@@ -115,14 +130,17 @@ def p_optionarg(p):
     '''
     p[0] = p[1]
 
+
 def p_param(p):
     '''param : PARAM'''
     name, seperator = _get_param(p[1])
     p[0] = ('parameter', name, seperator)
 
+
 def p_empty(p):
     '''empty : '''
     pass
+
 
 def p_error(p):
     logging.error("Syntax error at '%s'", p)
@@ -146,9 +164,11 @@ parser = yacc.yacc(debug=True,
                    debuglog=logging.getLogger(''),
                    errorlog=logging.getLogger(''))
 
+
 def parse_str(input_str):
     '''Returns AST'''
     return parser.parse(input_str, lexer=lexer)
+
 
 def process_obj(obj, symbol_table):
 
@@ -165,6 +185,7 @@ def process_obj(obj, symbol_table):
     else:
         raise Exception('Token type Not found:' + obj)
 
+
 def _add_sep(sep, _list):
 
     if len(_list) > 0:
@@ -173,6 +194,7 @@ def _add_sep(sep, _list):
             yield sep
 
         yield _list[-1]
+
 
 def process_parameter(obj, symbol_table):
     '''obj: is a tuple (symbol_name, seperator)'''
@@ -188,7 +210,7 @@ def process_parameter(obj, symbol_table):
     if isinstance(value, str):
         return value
 
-    #if there is a seperator
+    # if there is a seperator
     if sep is None:
         # value is a list
         return value[0]
@@ -198,6 +220,7 @@ def process_parameter(obj, symbol_table):
         return sep.join(value)
     else:
         return [val for val in _add_sep(sep.strip(), value)]
+
 
 def process_option(obj, symbol_table):
     '''obj is a tuple optionname, sep, (value)'''
@@ -252,7 +275,7 @@ def gencmd(str_or_file, symbol_table):
             if isinstance(val, list):
                 cmd.extend(val)
 
-        #return [arg.strip() for arg in cmd if arg is not None]
+        # return [arg.strip() for arg in cmd if arg is not None]
         return cmd
     else:
         raise Exception('AST not correct')
@@ -265,12 +288,12 @@ def get_param_list(filename):
     for name, value in _tokens:
         if name == 'PARAM':
             m = utillib.PARAM_REGEX.match(value)
-            #if m is not None and 'name' in m.groupdict():
+            # if m is not None and 'name' in m.groupdict():
             if m and 'name' in m.groupdict():
                 param_list.append(m.groupdict()['name'])
     return param_list
 
 
 if __name__ == '__main__':
-    #print(tokenize(_get_string(sys.argv[1])))
+    # print(tokenize(_get_string(sys.argv[1])))
     print(parse_str(_get_string(sys.argv[1])))

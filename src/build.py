@@ -148,10 +148,10 @@ class BuildSummaryJavascript(BuildSummary):
 
         for lang, ext in JsPkg.LANG_EXT_MAPPING.items():
             if isinstance(ext, str):
-                files = [_file for _file in fileset \
+                files = [_file for _file in fileset
                          if osp.splitext(_file)[1] == ext]
             else:
-                files = [_file for _file in fileset \
+                files = [_file for _file in fileset
                          if osp.splitext(_file)[1] in ext]
 
             if files:
@@ -162,40 +162,40 @@ class BuildSummaryJavascript(BuildSummary):
         build_artifacts_xml = BuildSummary._add(self._root, 'build-artifacts')
         web_xml = BuildSummary._add(build_artifacts_xml, 'web-src')
 
-        js_fileset = [_file for _file in fileset \
+        js_fileset = [_file for _file in fileset
                       if osp.splitext(_file)[1] == '.js']
 
         if js_fileset:
             self._add_file_set(web_xml, 'javascript', js_fileset)
 
-        html_fileset = [_file for _file in fileset \
+        html_fileset = [_file for _file in fileset
                         if osp.splitext(_file)[1] in ['.htm', '.html']]
 
         if html_fileset:
             self._add_file_set(web_xml, 'html', html_fileset)
 
-        css_fileset = [_file for _file in fileset \
+        css_fileset = [_file for _file in fileset
                        if osp.splitext(_file)[1] == '.css']
 
         if css_fileset:
             self._add_file_set(web_xml, 'css', css_fileset)
 
-
-        xml_fileset = [_file for _file in fileset \
+        xml_fileset = [_file for _file in fileset
                        if osp.splitext(_file)[1] == '.xml']
 
         if xml_fileset:
             self._add_file_set(web_xml, 'xml', xml_fileset)
 
+
 class JsPkg:
 
     PKG_ROOT_DIRNAME = "pkg1"
     WEB_FILE_TYPES = ['.js', '.html', '.css', '.xml']
-    LANG_EXT_MAPPING = {'javascript' : '.js',
-                        'html' : ['.html', '.htm'],
-                        'css' : '.css',
-                        'xml' : '.xml',
-                        'php' : '.php'}
+    LANG_EXT_MAPPING = {'javascript': '.js',
+                        'html': ['.html', '.htm'],
+                        'css': '.css',
+                        'xml': '.xml',
+                        'php': '.php'}
 
     @classmethod
     def get_file_types(cls, pkg_lang):
@@ -316,7 +316,7 @@ class JsNodePkg(JsPkg):
 
             if ignore_file:
                 with open(ignore_file) as fobj:
-                    ignore_patterns = {p.strip().strip('\n') for p in fobj \
+                    ignore_patterns = {p.strip().strip('\n') for p in fobj
                                        if p and not p.isspace() and not p.strip().startswith('#')}
                     ignore_patterns.add('node_modules')
                     return ignore_patterns
@@ -331,7 +331,7 @@ class JsNodePkg(JsPkg):
                     fileset.add(osp.join(pkg_dir, pkg_json['main']))
 
             if 'files' in pkg_json:
-                for _file in [osp.join(pkg_dir, f) \
+                for _file in [osp.join(pkg_dir, f)
                               for f in pkg_json['files']]:
                     if osp.isdir(_file):
                         fileset.update(utillib.get_file_list(_file, None,
@@ -349,7 +349,7 @@ class JsNodePkg(JsPkg):
         JsPkg.__init__(self, pkg_conf_file, input_root_dir, build_root_dir)
 
     def is_a_node_pkg(self, pkg_dir):
-        return True if (self.pkg_conf['build-sys'] == 'npm' and \
+        return True if (self.pkg_conf['build-sys'] == 'npm' and
                         osp.isfile(osp.join(pkg_dir, 'package.json'))) else False
 
     def get_src_files(self, pkg_dir, exclude_filter):
@@ -366,8 +366,8 @@ class JsNodePkg(JsPkg):
 
         fileset = fileset.difference(file_filters.exclude_files)
 
-        fileset = fileset.difference(_file for _file in fileset \
-                                     for exdir in file_filters.exclude_dirs \
+        fileset = fileset.difference(_file for _file in fileset
+                                     for exdir in file_filters.exclude_dirs
                                      if _file.startswith(osp.join(exdir, '')))
 
         return fileset
@@ -431,10 +431,10 @@ def get_pkg_obj(pkg_conf_file, input_root_dir, build_root_dir):
     pkg_conf = confreader.read_conf_into_dict(pkg_conf_file)
 
     web_pkg_types = {
-        'npm' : JsNodePkg,
-        'no-build' : JsNodePkg,
-        'composer' : JsNodePkg,
-        'pear' : JsNodePkg,
+        'npm': JsNodePkg,
+        'no-build': JsNodePkg,
+        'composer': JsNodePkg,
+        'pear': JsNodePkg,
     }
 
     build_sys = pkg_conf['build-sys']
@@ -489,4 +489,3 @@ def build(input_root_dir, output_root_dir, build_root_dir):
             utillib.write_to_file(osp.join(output_root_dir, 'build.conf'), build_conf)
 
     return (exit_code, build_summary_file)
-

@@ -321,7 +321,7 @@ class WebTool(SwaTool):
         all_lang.add(WebTool.FILE_TYPE)
 
         tokens = gencmd.get_param_list(invoke_file)
-        
+
         no_artifacts = True
         for file_type in set(tokens).intersection(all_lang):
             if file_type in artifacts and len(artifacts[file_type]):
@@ -367,7 +367,7 @@ class WebTool(SwaTool):
         '''returns a tuple with key in attribute and an integer corresponding
         to the size '''
 
-        def get_cmd_size(invoke_file, _dict): 
+        def get_cmd_size(invoke_file, _dict):
             return len(' '.join(gencmd.gencmd(invoke_file, _dict)))
 
         artifacts_local = dict(artifacts)
@@ -384,8 +384,8 @@ class WebTool(SwaTool):
 
     def _split_list(self, llist, filelist, max_args_size):
         if len(' '.join(filelist)) > max_args_size:
-            self._split_list(llist, filelist[0:int(len(filelist)/2)], max_args_size)
-            self._split_list(llist, filelist[int(len(filelist)/2):], max_args_size)
+            self._split_list(llist, filelist[0:int(len(filelist) / 2)], max_args_size)
+            self._split_list(llist, filelist[int(len(filelist) / 2):], max_args_size)
         else:
             llist.append(filelist)
 
@@ -411,7 +411,7 @@ class WebTool(SwaTool):
                                                                             self._tool_conf['tool-config-file']))
             else:
                 self._tool_conf['tool-config-file'] = self._tool_conf['tool-default-config-file']
-    
+
     def assess(self, build_summary_file, results_root_dir):
 
         if not osp.isdir(results_root_dir):
@@ -443,7 +443,7 @@ class WebTool(SwaTool):
 
                 invoke_file = osp.join(self.input_root_dir, artifacts['tool-invoke'])
                 skip_assess = WebTool._has_no_artifacts(invoke_file, artifacts)
-                
+
                 start_time = utillib.posix_epoch()
 
                 # SKIP Assessment if no artifacts relavent to the tools are found
@@ -464,8 +464,8 @@ class WebTool(SwaTool):
                     assess_cmd, exit_code, environ = [None], 0, self._get_env()
 
                 assessment_report = artifacts['assessment-report'] \
-                                    if outfile != artifacts['assessment-report'] else outfile
-                
+                    if outfile != artifacts['assessment-report'] else outfile
+
                 # write assessment summary file
                 # return pass, fail, assessment_summary
                 assessment_summary.add_report(artifacts['build-artifact-id'],
@@ -525,8 +525,8 @@ class Flow(SwaTool):
             content = '''[include]\n\n[libs]\n\n[options]\n\n[ignore]\n<PROJECT_ROOT>/node_modules\n'''
             if self.build_artifacts_helper['package-exclude-paths']:
                 # TODO: These may have to converted into ocaml regex
-                ignore_patterns = '\n'.join({'<PROJECT_ROOT>/' + self._convert_to_regex(pattern.strip()) for pattern in \
-                                     self.build_artifacts_helper['package-exclude-paths'].split(',')})
+                ignore_patterns = '\n'.join({'<PROJECT_ROOT>/' + self._convert_to_regex(pattern.strip()) for pattern in
+                                             self.build_artifacts_helper['package-exclude-paths'].split(',')})
                 content += ignore_patterns + '\n'
 
             ignore_file = None
