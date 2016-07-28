@@ -67,7 +67,7 @@ class BuildArtifactsHelper:
         artifacts['srcfile'] = list()
 
         for elem in xml_elem:
-             #['javascript', 'html', 'css', 'xml']:
+            # ['javascript', 'html', 'css', 'xml']:
             if elem.tag in JsPkg.LANG_EXT_MAPPING.keys():
                 fileset = BuildArtifactsHelper._get_fileset(artifacts['build-root-dir'],
                                                             elem)
@@ -319,7 +319,7 @@ class WebTool(SwaTool):
 
         all_lang = set(JsPkg.LANG_EXT_MAPPING.keys())
         all_lang.add(WebTool.FILE_TYPE)
-        
+
         tokens = gencmd.get_param_list(invoke_file)
         
         no_artifacts = True
@@ -352,7 +352,8 @@ class WebTool(SwaTool):
             for filelist in split_file_lists:
                 new_artifacts = dict(artifacts)
                 new_artifacts[self.FILE_TYPE] = filelist
-                new_artifacts['build-artifact-id'] = '{0}-{1}'.format(new_artifacts['id'], str(id_count))
+                new_artifacts['build-artifact-id'] = '{0}-{1}'.format(new_artifacts['id'],
+                                                                      str(id_count))
                 new_artifacts['assessment-report'] = osp.join(new_artifacts['results-root-dir'],
                                                               self._tool_conf['assessment-report-template'].format(new_artifacts['build-artifact-id']))
                 id_count += 1
@@ -365,10 +366,11 @@ class WebTool(SwaTool):
     def _split_artifacts_required(self, artifacts):
         '''returns a tuple with key in attribute and an integer corresponding
         to the size '''
-        artifacts_local = dict(artifacts)
-        get_cmd_size = lambda invoke_file, _dict: \
-                       len(' '.join(gencmd.gencmd(invoke_file, _dict)))
 
+        def get_cmd_size(invoke_file, _dict): 
+            return len(' '.join(gencmd.gencmd(invoke_file, _dict)))
+
+        artifacts_local = dict(artifacts)
         tool_invoke_file = osp.join(self.input_root_dir,
                                     artifacts['tool-invoke'])
 
@@ -678,4 +680,3 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
                                       results_conf)
 
     return (exit_code, assessment_summary_file)
-
