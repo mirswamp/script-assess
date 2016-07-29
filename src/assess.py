@@ -328,13 +328,8 @@ class WebTool(SwaTool):
         This method takes the invoke_file for the tool and checks if artifacts 
         required by the tool are present in the package'''
 
-        no_artifacts = True
-        for file_type in cls._tool_target_artifacts(invoke_file):
-            if file_type in artifacts and len(artifacts[file_type]):
-                no_artifacts = False
-                break
-
-        return no_artifacts
+        return not any(True if file_type in artifacts and artifacts[file_type] else False
+                       for file_type in cls._tool_target_artifacts(invoke_file))
 
     @classmethod
     def _split_artifacts_required(cls, tool_invoke_file, artifacts):
@@ -348,9 +343,10 @@ class WebTool(SwaTool):
 
         if get_cmd_size(tool_invoke_file, artifacts_local) > utillib.max_cmd_size():
 
-            # Removing all the artifacts that the tool works on
-            [None for m in map(artifacts_local.pop,
-                               WebTool._tool_target_artifacts(tool_invoke_file))]
+            # Remove all the artifacts that the tool works on, and then check the size
+            for k in WebTool._tool_target_artifacts(tool_invoke_file):
+                if k in artifacts_local and artifacts_local[k]:
+                    artifacts_local.pop(k)
 
             max_allowed_size = utillib.max_cmd_size() - get_cmd_size(tool_invoke_file,
                                                                      artifacts_local)
@@ -386,14 +382,14 @@ class WebTool(SwaTool):
                                                                artifacts)
         if split_required:
             tool_target_artifacts = WebTool._tool_target_artifacts(tool_invoke_file)
-            target_artifacts = {k: v for k, v in artifacts.items()
-                                if k in tool_target_artifacts and len(k)}
+            package_artifacts = {k: v for k, v in artifacts.items()
+                                   if k in tool_target_artifacts and artifacts[k]}
             # Remove tool_target_artifacts from the dictionary, split and add them later
-            [None for m in map(artifacts.pop, tool_target_artifacts)]
+            [None for m in map(artifacts.pop, package_artifacts.keys())]
 
             id_count = 1
-            for file_type in target_artifacts.keys():
-                for filelist in WebTool._split_list(target_artifacts[file_type], max_allowed_size):
+            for file_type in package_artifacts.keys():
+                for filelist in WebTool._split_list(package_artifacts[file_type], max_allowed_size):
                     new_artifacts = dict(artifacts)
                     new_artifacts[file_type] = filelist
                     new_artifacts['build-artifact-id'] = '{0}-{1}'.format(new_artifacts['id'],
