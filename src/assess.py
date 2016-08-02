@@ -297,12 +297,11 @@ class SwaTool:
 
     def _validate_exit_code(self, exit_code):
         if 'valid-exit-status' in self._tool_conf:
-            regex = re.compile(self._tool_conf['valid-exit-status'])
-            m = regex.match(str(exit_code))
-            if m is None:
-                return False
-            else:
-                return True if m.group(0) == str(exit_code) else False
+            valid_exit_codes = [int(ec.strip())
+                                for ec in self._tool_conf['valid-exit-status'].split(',')
+                                if ec.strip()]
+
+            return exit_code in valid_exit_codes
         else:
             return True if(exit_code == 0) else False
 
