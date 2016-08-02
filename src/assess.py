@@ -459,10 +459,9 @@ class WebTool(SwaTool):
                 invoke_file = osp.join(self.input_root_dir, artifacts['tool-invoke'])
                 skip_assess = WebTool._has_no_artifacts(invoke_file, artifacts)
 
-                start_time = utillib.posix_epoch()
-
-                # SKIP Assessment if no artifacts relavent to the tools are found
+                # SKIP Assessment if there are no artifacts relavent to the tool
                 if not skip_assess:
+                    start_time = utillib.posix_epoch()
                     assess_cmd = gencmd.gencmd(invoke_file, artifacts)
                     logging.info('ASSESSMENT CMD: %s', assess_cmd)
 
@@ -475,30 +474,28 @@ class WebTool(SwaTool):
                     logging.info('ASSESSMENT WORKING DIR: %s', results_root_dir)
                     logging.info('ASSESSMENT EXIT CODE: %d', exit_code)
                     logging.info('ASSESSMENT ENVIRONMENT: %s', environ)
-                else:
-                    assess_cmd, exit_code, environ = [None], 0, self._get_env()
 
-                assessment_report = artifacts['assessment-report'] \
-                    if outfile != artifacts['assessment-report'] else outfile
+                    assessment_report = artifacts['assessment-report'] \
+                                        if outfile != artifacts['assessment-report'] else outfile
 
-                # write assessment summary file
-                # return pass, fail, assessment_summary
-                assessment_summary.add_report(artifacts['build-artifact-id'],
-                                              assess_cmd,
-                                              exit_code,
-                                              environ,
-                                              results_root_dir,
-                                              assessment_report,
-                                              outfile,
-                                              errfile,
-                                              start_time,
-                                              utillib.posix_epoch())
-
-                if not skip_assess:
+                    # write assessment summary file
+                    # return pass, fail, assessment_summary
+                    assessment_summary.add_report(artifacts['build-artifact-id'],
+                                                  assess_cmd,
+                                                  exit_code,
+                                                  environ,
+                                                  results_root_dir,
+                                                  assessment_report,
+                                                  outfile,
+                                                  errfile,
+                                                  start_time,
+                                                  utillib.posix_epoch())
                     if self._validate_exit_code(exit_code):
                         passed += 1
                     else:
                         failed += 1
+                else:
+                    logging.info('ASSESSMENT SKIP (NO SOURCE FILES FOUND)')
 
             return (passed, failed, assessment_summary_file)
 
