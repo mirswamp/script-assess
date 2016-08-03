@@ -415,15 +415,19 @@ class JsNodePkg(WebPkg):
                 fileset = self.get_src_files(pkg_build_dir,
                                              self.pkg_conf.get('package-exclude-paths', ''))
 
-                if len(fileset) == 0:
-                    err = EmptyPackageError(osp.basename(self.pkg_dir),
-                                            BuildSummary.FILENAME)
-                    build_summary.add_exit_code(err.exit_code)
-                    raise err
-                else:
-                    build_summary.add_exit_code(0)
-                    build_summary.add_build_artifacts(fileset)
-                    return (0, BuildSummary.FILENAME)
+                # if len(fileset) == 0:
+                #     err = EmptyPackageError(osp.basename(self.pkg_dir),
+                #                             BuildSummary.FILENAME)
+                #     build_summary.add_exit_code(err.exit_code)
+                #     raise err
+                # else:
+                #     build_summary.add_exit_code(0)
+                #     build_summary.add_build_artifacts(fileset)
+                #     return (0, BuildSummary.FILENAME)
+
+                build_summary.add_exit_code(exit_code)
+                build_summary.add_build_artifacts(fileset)
+                return (exit_code, BuildSummary.FILENAME)
 
 
 def get_pkg_obj(pkg_conf_file, input_root_dir, build_root_dir):
