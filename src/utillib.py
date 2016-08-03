@@ -139,10 +139,10 @@ def unpack_archive(archive, dirpath, createdir=True):
     dirpath = osp.abspath(dirpath)
 
     cmd_template_dict = {'.tar.gz': 'tar -x -z -f %s',
+                         '.tgz': 'tar -x -z -f %s',
                          '.tar.Z': 'tar -x -Z -f %s',
                          '.tar.bz2': 'tar -x -j -f %s',
-                         '.tgz': 'tar -x -z -f %s',
-                         '.tar': 'tar -x -z -f %s',
+                         '.tar': 'tar -x -f %s',
                          '.zip': 'unzip -qq -o %s',
                          '.jar': 'unzip -qq -o %s',
                          '.war': 'unzip -qq -o %s',
