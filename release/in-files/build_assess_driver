@@ -65,7 +65,8 @@ OPT_SWAMP_DIR=/opt/swamp
 
 [[ -d $OPT_SWAMP_DIR ]] || sudo mkdir $OPT_SWAMP_DIR
 
-NODE_ARCHIVE=$(find $VMINPUTDIR -name 'node-v6.?.?-linux-x64.tar.xz' | tail -n 1)
+#NODE_ARCHIVE=$(find $VMINPUTDIR -name 'node-v6.?.?-linux-x64.tar.xz' | tail -n 1)
+NODE_ARCHIVE="$VMINPUTDIR/node-v6.3.1-linux-x64.tar.xz"
 NODE_DIR=$(untar $NODE_ARCHIVE $OPT_SWAMP_DIR)
 [[ $? == 0 ]] && export PATH="$OPT_SWAMP_DIR/$NODE_DIR/bin:$PATH"
 

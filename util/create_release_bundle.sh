@@ -68,7 +68,6 @@ function md5_sum {
 
 		find . -type f ! -name "$checksumfile" -exec "$MD5EXE" '{}' ';' > "$checksumfile"
     )
-
 }
 
 function main {

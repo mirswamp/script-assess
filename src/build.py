@@ -195,7 +195,8 @@ class WebPkg:
                         'html': ['.html', '.htm'],
                         'css': '.css',
                         'xml': '.xml',
-                        'php': '.php'}
+                        'php': '.php',
+                        'perl': ['.pl', '.pm']}
 
     @classmethod
     def get_file_types(cls, pkg_lang):

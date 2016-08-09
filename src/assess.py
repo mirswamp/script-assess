@@ -295,6 +295,17 @@ class SwaTool:
                                                  "Command '{0}' return {1}".format(install_cmd,
                                                                                    exit_code))
 
+    def _validate_exit_code_old(self, exit_code):
+        if 'valid-exit-status' in self._tool_conf:
+            regex = re.compile(self._tool_conf['valid-exit-status'])
+            m = regex.match(str(exit_code))
+            if m is None:
+                return False
+            else:
+                return True if m.group(0) == str(exit_code) else False
+        else:
+            return True if(exit_code == 0) else False
+                               
     def _validate_exit_code(self, exit_code):
         if 'valid-exit-status' in self._tool_conf:
             valid_exit_codes = [int(ec.strip())
