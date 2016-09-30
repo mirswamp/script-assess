@@ -243,7 +243,8 @@ class WebPkg:
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
 
         self.pkg_conf = confreader.read_conf_into_dict(pkg_conf_file)
-
+        self.pkg_conf['package-language'] = self.pkg_conf['package-language'].lower()
+        
         with LogTaskStatus('package-unarchive'):
             pkg_archive = osp.join(input_root_dir, self.pkg_conf['package-archive'])
             pkg_root_dir = osp.join(build_root_dir, WebPkg.PKG_ROOT_DIRNAME)

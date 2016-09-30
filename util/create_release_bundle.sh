@@ -100,13 +100,15 @@ function copy_scripts {
 	if [[ ! -d "$FRAMEWORKS" ]]; then
 		FRAMEWORKS="$HOME/$FRAMEWORKS"
 	fi
-	
-	local NODEJS=$(find "$FRAMEWORKS/node.js/noarch" -name 'node-v?.?.?-linux-x64.tar.xz' | sort | tail -n 1)
+
+	local NODEJS_x86_64=$(find "$FRAMEWORKS/node.js/noarch" -name 'node-v?.?.?-linux-x64.tar.xz' | sort | tail -n 1)
+	local NODEJS_x86_32=$(find "$FRAMEWORKS/node.js/noarch" -name 'node-v?.?.?-linux-x86.tar.xz' | sort | tail -n 1)
 	local PHP_COMPOSER=$(find "$FRAMEWORKS/php/noarch" -name 'composer.phar' | sort | tail -n 1)
 
 	mkdir -p "$dest_dir/in-files"
     cp -r "$release_dir/in-files" "$dest_dir"
-	cp -r "$NODEJS" "$dest_dir/in-files"
+	[[ -n "$NODEJS_x86_64" ]] && cp -r "$NODEJS_x86_64" "$dest_dir/in-files"
+	[[ -n "$NODEJS_x86_32" ]] && cp -r "$NODEJS_x86_32" "$dest_dir/in-files"
 	cp -r "$PHP_COMPOSER" "$dest_dir/in-files"
 	
 	$update_platform --framework node.js  --dir "$dest_dir/in-files" || exit 1

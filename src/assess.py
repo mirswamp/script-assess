@@ -527,6 +527,29 @@ class PhpTool(WebTool):
         WebTool.__init__(self, input_root_dir, tool_root_dir)
 
 
+class Lizard(WebTool):
+
+    # FILE_TYPE = 'srcfile'
+
+    def __init__(self, input_root_dir, tool_root_dir):
+        WebTool.__init__(self, input_root_dir, tool_root_dir)
+
+    def _get_build_artifacts(self, build_artifacts_helper, results_root_dir):
+
+        for artifacts in build_artifacts_helper.get_build_artifacts('web-src'):
+            artifacts['build-artifact-id'] = artifacts['id']
+            artifacts['results-root-dir'] = results_root_dir
+            artifacts.update(self._tool_conf)
+            artifacts['assessment-report'] = osp.join(artifacts['results-root-dir'],
+                                                      artifacts['assessment-report-template'].format(artifacts['build-artifact-id']))
+
+            artifacts[WebTool.FILE_TYPE] = [_file for _file in artifacts[WebTool.FILE_TYPE]
+                                            if osp.splitext(_file)[1] not in ['.css' '.xml']]
+            
+            for new_artifacts in self._split_build_artifacts(artifacts):
+                yield new_artifacts
+        
+        
 class Flow(SwaTool):
 
     def __init__(self, input_root_dir, tool_root_dir):
@@ -647,6 +670,88 @@ class Flow(SwaTool):
         return (passed, failed, assessment_summary_file)
 
 
+class Retire(SwaTool):
+
+    def __init__(self, input_root_dir, tool_root_dir):
+        SwaTool.__init__(self, input_root_dir, tool_root_dir)
+        
+    def assess(self, build_summary_file, results_root_dir):
+
+        if not osp.isdir(results_root_dir):
+            os.makedirs(results_root_dir, exist_ok=True)
+
+        assessment_summary_file = osp.join(results_root_dir, 'assessment_summary.xml')
+
+        self.build_artifacts_helper = BuildArtifactsHelper(build_summary_file)
+
+        passed = 0
+        failed = 0
+        with AssessmentSummary(assessment_summary_file,
+                               self.build_artifacts_helper,
+                               self._tool_conf) as assessment_summary:
+
+            artifacts = {'id': 1}
+
+            artifacts.update(self._tool_conf)
+            assessment_report = osp.join(results_root_dir,
+                                         artifacts['assessment-report-template'].format(artifacts['id']))
+
+            if 'report-on-stdout' in artifacts \
+               and artifacts['report-on-stdout'] == 'true':
+                outfile = assessment_report
+            else:
+                artifacts['assessment-report'] = assessment_report
+                outfile = osp.join(results_root_dir,
+                                   'swa_tool_stdout{0}.out'.format(artifacts['id']))
+
+            errfile = osp.join(results_root_dir,
+                               'swa_tool_stderr{0}.out'.format(artifacts['id']))
+
+            assessment_working_dir = self.build_artifacts_helper.get_pkg_dir()
+            artifacts['package-dir'] = assessment_working_dir
+
+            if not osp.isfile(osp.join(assessment_working_dir, 'package.json')):
+                artifacts['not-node-pkg'] = '--js'
+            
+            assess_cmd = gencmd.gencmd(osp.join(self.input_root_dir,
+                                                artifacts['tool-invoke']),
+                                       artifacts)
+
+            logging.info('ASSESSMENT CMD: %s', assess_cmd)
+            
+            start_time = utillib.posix_epoch()
+
+            exit_code, environ = utillib.run_cmd(assess_cmd,
+                                                 outfile=outfile,
+                                                 errfile=errfile,
+                                                 cwd=assessment_working_dir,
+                                                 env=self._get_env())
+
+            logging.info('ASSESSMENT WORKING DIR: %s', assessment_working_dir)
+            logging.info('ASSESSMENT EXIT CODE: %d', exit_code)
+            logging.info('ASSESSMENT ENVIRONMENT: %s', environ)
+
+            # write assessment summary file
+            # return pass, fail, assessment_summary
+            assessment_summary.add_report(artifacts['id'],
+                                          assess_cmd,
+                                          exit_code,
+                                          environ,
+                                          assessment_working_dir,
+                                          assessment_report,
+                                          outfile,
+                                          errfile,
+                                          start_time,
+                                          utillib.posix_epoch())
+
+            if self._validate_exit_code(exit_code):
+                passed += 1
+            else:
+                failed += 1
+
+        return (passed, failed, assessment_summary_file)
+
+
 def assess(input_root_dir, output_root_dir, tool_root_dir,
            results_root_dir, build_summary_file):
 
@@ -655,10 +760,14 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
 
     if tool_conf['tool-type'] == 'flow':
         swatool = Flow(input_root_dir, tool_root_dir)
+    elif tool_conf['tool-type'] == 'retire-js':
+        swatool = Retire(input_root_dir, tool_root_dir)
     elif tool_conf['tool-type'] in ['php_codesniffer', 'phpmd']:
         swatool = PhpTool(input_root_dir, tool_root_dir)
-    elif tool_conf['tool-type'] in ['cloc', 'lizard']:
+    elif tool_conf['tool-type'] == 'cloc':
         swatool = WebTool(input_root_dir, tool_root_dir)
+    elif tool_conf['tool-type'] == 'lizard':
+        swatool = Lizard(input_root_dir, tool_root_dir)
     else:
         swatool = JsTool(input_root_dir, tool_root_dir)
 
