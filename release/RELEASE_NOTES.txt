@@ -1,0 +1,15 @@
+-----------------------------------
+ruby-assess version 0.7.6 (Wed Oct  5 17:14:11 CDT 2016)
+-----------------------------------
+- Added support for error handling for invalid pkg-dir, build-dir, config-dir
+
+- Added support for Lizard and Retire.js
+
+- Remove arch from package names
+
+- Added standard PHP extensions (http://php.net/manual/en/extensions.membership.php) as OS dependencies for ubuntu-16.04-64
+
+- Fixed bug with extracting tar archives
+
+- If there are no source files for Javascript, PHP... then exception that the package is empty is commented out (i.e. NOT thrown)
+
