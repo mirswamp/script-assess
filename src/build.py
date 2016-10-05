@@ -256,9 +256,11 @@ class WebPkg:
             pkg_dir = osp.join(pkg_root_dir, self.pkg_conf['package-dir'])
 
             if not osp.isdir(pkg_dir):
-                raise NotADirectoryException(osp.basename(pkg_dir))
-            else:
-                self.pkg_dir = pkg_dir
+                LogTaskStatus.log_task('cd-package-dir', 1, None,
+                                       "Directory '{0}' not found".format(osp.basename(pkg_dir)))
+                raise NotADirectoryException()
+
+            self.pkg_dir = pkg_dir
 
     def _configure(self, build_root_dir, build_summary):
 
@@ -271,6 +273,11 @@ class WebPkg:
                 config_dir = osp.normpath(osp.join(self.pkg_dir,
                                                    self.pkg_conf.get('config-dir', '.')))
 
+                if not osp.isdir(config_dir):
+                    LogTaskStatus.log_task('cd-config-dir', 1, None,
+                                           "Directory '{0}' not found".format(osp.basename(config_dir)))
+                    raise NotADirectoryException()
+
                 config_cmd = '%s %s' % (self.pkg_conf['config-cmd'],
                                         self.pkg_conf.get('config-opt', ''))
 
@@ -278,10 +285,10 @@ class WebPkg:
                 errfile = osp.join(build_root_dir, 'config_stderr.out')
 
                 (exit_code, environ) = WebPkg.run_cmd(config_cmd,
-                                                     config_dir,
-                                                     outfile,
-                                                     errfile,
-                                                     "CONFIGURE")
+                                                      config_dir,
+                                                      outfile,
+                                                      errfile,
+                                                      "CONFIGURE")
 
                 build_summary.add_command('configure',
                                           config_cmd,
@@ -386,6 +393,11 @@ class JsNodePkg(WebPkg):
 
                 pkg_build_dir = osp.normpath(osp.join(self.pkg_dir,
                                                       self.pkg_conf.get('build-dir', '.')))
+
+                if not osp.isdir(pkg_build_dir):
+                    LogTaskStatus.log_task('cd-build-dir', 1, None,
+                                           "Directory '{0}' not found".format(osp.basename(pkg_build_dir)))
+                    raise NotADirectoryException()
 
                 if self.pkg_conf['build-sys'] == 'npm':
                     build_cmd = 'npm install'

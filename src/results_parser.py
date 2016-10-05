@@ -66,11 +66,8 @@ def parse_results(input_dir, assessment_summary_file, results_dir, output_dir):
     command_template = '{EXECUTABLE}\
  --summary_file={PATH_TO_SUMMARY_FILE}\
  --input_dir={PATH_TO_RESULTS_DIR}\
- --output_dir={PATH_TO_OUTPUT_DIR}\
  --output_file={OUTPUT_FILENAME}\
- --weakness_count_file={WEAKNESS_COUNT_FILENAME}\
- --merge\
- --log_file={LOGFILE}'
+ --weakness_count_file={WEAKNESS_COUNT_FILENAME}'
 
     if not osp.isfile(assessment_summary_file):
         raise FileNotFoundException(assessment_summary_file)

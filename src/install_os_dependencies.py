@@ -8,7 +8,10 @@ from . import confreader
 
 
 class InstallOSDependenciesFailedError(Exception):
-    pass
+
+    def __init__(self, *args):
+        Exception.__init__(self, *args)
+        self.retry = True
 
 
 def install(input_dir):
@@ -35,10 +38,10 @@ def install(input_dir):
                     logging.info('OS DEPENDENCIES INSTALLATION ENVIRONMENT: %s', environ)
 
                     if exit_code != 0:
-                        raise InstallOSDependenciesFailedError('Install OS Dependencies Failed')
+                        raise InstallOSDependenciesFailedError("Failed to install dependencies '{0}'".format(os_deps[this_platform_deps]))
 
                 else:
-                    status_dot_out.skip_task('None')
+                    status_dot_out.skip_task('none')
                     logging.info('This platform needs no additional packages to be installed')
             else:
                 status_dot_out.skip_task('none')
