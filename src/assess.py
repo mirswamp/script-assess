@@ -779,7 +779,7 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
 
             if passed == 0 and failed == 0:
                 exit_code = 0
-                status_dot_out.skip_task(task_msg='no files')
+                status_dot_out.skip_task('no files')
                 # status_dot_out.skip_task(task_msg=None,
                 # task_msg_indetail="No relavent files found to run '%s'" % tool_conf['tool-type'])
             else:
