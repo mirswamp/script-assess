@@ -1,5 +1,5 @@
 -----------------------------------
-ruby-assess version 0.7.6 (Wed Oct  5 17:14:11 CDT 2016)
+ruby-assess version 0.7.7 (Wed Oct  5 19:16:46 CDT 2016)
 -----------------------------------
 - Added support for error handling for invalid pkg-dir, build-dir, config-dir
 
@@ -12,4 +12,3 @@ ruby-assess version 0.7.6 (Wed Oct  5 17:14:11 CDT 2016)
 - Fixed bug with extracting tar archives
 
 - If there are no source files for Javascript, PHP... then exception that the package is empty is commented out (i.e. NOT thrown)
-
