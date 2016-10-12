@@ -256,7 +256,7 @@ class WebPkg:
             pkg_dir = osp.join(pkg_root_dir, self.pkg_conf['package-dir'])
 
             if not osp.isdir(pkg_dir):
-                LogTaskStatus.log_task('cd-package-dir', 1, None,
+                LogTaskStatus.log_task('chdir-package-dir', 1, None,
                                        "Directory '{0}' not found".format(osp.basename(pkg_dir)))
                 raise NotADirectoryException()
 
@@ -274,7 +274,7 @@ class WebPkg:
                                                    self.pkg_conf.get('config-dir', '.')))
 
                 if not osp.isdir(config_dir):
-                    LogTaskStatus.log_task('cd-config-dir', 1, None,
+                    LogTaskStatus.log_task('chdir-config-dir', 1, None,
                                            "Directory '{0}' not found".format(osp.basename(config_dir)))
                     raise NotADirectoryException()
 
@@ -395,7 +395,7 @@ class JsNodePkg(WebPkg):
                                                       self.pkg_conf.get('build-dir', '.')))
 
                 if not osp.isdir(pkg_build_dir):
-                    LogTaskStatus.log_task('cd-build-dir', 1, None,
+                    LogTaskStatus.log_task('chdir-build-dir', 1, None,
                                            "Directory '{0}' not found".format(osp.basename(pkg_build_dir)))
                     raise NotADirectoryException()
 
