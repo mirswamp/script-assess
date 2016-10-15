@@ -12,7 +12,7 @@ from . import utillib
 from . import confreader
 from .logger import LogTaskStatus
 from .utillib import UnpackArchiveError
-from .build import WebPkg
+from .build.common import LANG_EXT_MAPPING
 
 
 class ToolInstallFailedError(Exception):
@@ -68,7 +68,7 @@ class BuildArtifactsHelper:
 
         for elem in xml_elem:
             # ['javascript', 'html', 'css', 'xml']:
-            if elem.tag in WebPkg.LANG_EXT_MAPPING.keys():
+            if elem.tag in LANG_EXT_MAPPING.keys():
                 fileset = BuildArtifactsHelper._get_fileset(artifacts['build-root-dir'],
                                                             elem)
                 artifacts[elem.tag] = fileset
@@ -282,13 +282,12 @@ class SwaTool:
             else:
 
                 install_cmd = self._tool_conf['tool-install-cmd']
-                logging.info('TOOL INSTALL COMMAND: %s', install_cmd)
 
                 exit_code, environ = utillib.run_cmd(install_cmd,
                                                      cwd=osp.join(tool_root_dir,
                                                                   self._tool_conf['tool-dir']),
-                                                     env=self._get_env())
-                logging.info('TOOL INSTALL ENVIRON: %s', environ)
+                                                     env=self._get_env(),
+                                                     description='TOOL INSTALL')
 
                 if exit_code != 0:
                     raise ToolInstallFailedError("Install Tool Failed, "
@@ -331,7 +330,7 @@ class WebTool(SwaTool):
         This method takes the invoke_file for the tool and return that target 
         artifacts the tools works on'''
 
-        all_lang = set(WebPkg.LANG_EXT_MAPPING.keys())
+        all_lang = set(LANG_EXT_MAPPING.keys())
         all_lang.add(WebTool.FILE_TYPE)  # to add 'srcfile'
         tokens = gencmd.get_param_list(invoke_file)
         return list(set(tokens).intersection(all_lang))
@@ -474,17 +473,13 @@ class WebTool(SwaTool):
                 if not skip_assess:
                     start_time = utillib.posix_epoch()
                     assess_cmd = gencmd.gencmd(invoke_file, artifacts)
-                    logging.info('ASSESSMENT CMD: %s', assess_cmd)
 
                     exit_code, environ = utillib.run_cmd(assess_cmd,
                                                          outfile=outfile,
                                                          errfile=errfile,
                                                          cwd=results_root_dir,
-                                                         env=self._get_env())
-
-                    logging.info('ASSESSMENT WORKING DIR: %s', results_root_dir)
-                    logging.info('ASSESSMENT EXIT CODE: %d', exit_code)
-                    logging.info('ASSESSMENT ENVIRONMENT: %s', environ)
+                                                         env=self._get_env(),
+                                                         description='ASSESSMENT')
 
                     assessment_report = artifacts['assessment-report'] \
                                         if outfile != artifacts['assessment-report'] else outfile
@@ -629,8 +624,6 @@ class Flow(SwaTool):
                                                 artifacts['tool-invoke']),
                                        artifacts)
 
-            logging.info('ASSESSMENT CMD: %s', assess_cmd)
-
             # For Flow package dir is assessment working dir
             assessment_working_dir = self.build_artifacts_helper.get_pkg_dir()
 
@@ -643,11 +636,8 @@ class Flow(SwaTool):
                                                  outfile=outfile,
                                                  errfile=errfile,
                                                  cwd=assessment_working_dir,
-                                                 env=self._get_env())
-
-            logging.info('ASSESSMENT WORKING DIR: %s', assessment_working_dir)
-            logging.info('ASSESSMENT EXIT CODE: %d', exit_code)
-            logging.info('ASSESSMENT ENVIRONMENT: %s', environ)
+                                                 env=self._get_env(),
+                                                 description='ASSESSMENT')
 
             # write assessment summary file
             # return pass, fail, assessment_summary
@@ -717,19 +707,14 @@ class Retire(SwaTool):
                                                 artifacts['tool-invoke']),
                                        artifacts)
 
-            logging.info('ASSESSMENT CMD: %s', assess_cmd)
-            
             start_time = utillib.posix_epoch()
 
             exit_code, environ = utillib.run_cmd(assess_cmd,
                                                  outfile=outfile,
                                                  errfile=errfile,
                                                  cwd=assessment_working_dir,
-                                                 env=self._get_env())
-
-            logging.info('ASSESSMENT WORKING DIR: %s', assessment_working_dir)
-            logging.info('ASSESSMENT EXIT CODE: %d', exit_code)
-            logging.info('ASSESSMENT ENVIRONMENT: %s', environ)
+                                                 env=self._get_env(),
+                                                 description='ASSESSMENT')
 
             # write assessment summary file
             # return pass, fail, assessment_summary

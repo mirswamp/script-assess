@@ -9,6 +9,7 @@ import re
 import shlex
 import uuid
 from collections import namedtuple
+import logging
 
 
 if 'PermissionError' in __builtins__:
@@ -73,50 +74,6 @@ def _unpack_archive_xz(archive, dirpath):
     return tar_proc.returncode
 
 
-def unpack_archive_old(archive, dirpath, createdir=True):
-    '''
-    Unarchives/Extracts the file \'archive\' in the directory \'dirpath\'.
-    Expects \'dirpath\' to be already present.
-    Throws FileNotFoundException and NotADirectoryException if
-    archive or dirpath not found
-    ValueError if archive format is not supported.
-    '''
-
-    if not osp.isfile(archive):
-        raise FileNotFoundException(archive)
-
-    if not osp.isdir(dirpath):
-        if createdir:
-            os.makedirs(dirpath)
-        else:
-            raise NotADirectoryException(dirpath)
-
-    archive = osp.abspath(archive)
-    dirpath = osp.abspath(dirpath)
-
-    if archive.endswith('.tar.gz'):
-        return run_cmd(['tar', '-x', '-z', '-f', archive], cwd=dirpath)[0]
-    elif archive.endswith('.tar.Z'):
-        return run_cmd(['tar', '-x', '-Z', '-f', archive], cwd=dirpath)[0]
-    elif archive.endswith('.tar.bz2'):
-        return run_cmd(['tar', '-x', '-j', '-f', archive], cwd=dirpath)[0]
-    elif archive.endswith('.tar.xz'):
-        return _unpack_archive_xz(archive, dirpath)
-    elif archive.endswith('.tgz'):
-        return run_cmd(['tar', '-x', '-z', '-f', archive], cwd=dirpath)[0]
-    elif archive.endswith('.tar'):
-        return run_cmd(['tar', '-x', '-f', archive], cwd=dirpath)[0]
-    elif (osp.splitext(archive)[1].lower() == '.zip') or\
-         (osp.splitext(archive)[1].lower() == '.jar') or\
-         (osp.splitext(archive)[1].lower() == '.war') or\
-         (osp.splitext(archive)[1].lower() == '.ear'):
-        return run_cmd(['unzip', '-qq', '-o', archive], cwd=dirpath)[0]
-    elif archive.endswith('.phar'):
-        return run_cmd(['phar', 'extract', '-f', archive], cwd=dirpath)[0]
-    else:
-        raise ValueError('Format not supported')
-
-
 def unpack_archive(archive, dirpath, createdir=True):
     '''
     Unarchives/Extracts the file \'archive\' in the directory \'dirpath\'.
@@ -152,22 +109,23 @@ def unpack_archive(archive, dirpath, createdir=True):
     if any((archive.endswith(ext) for ext in cmd_template_dict)):
         cmd = [cmd_template_dict[ext] % archive
                for ext in cmd_template_dict if archive.endswith(ext)][0]
-        return run_cmd(cmd, cwd=dirpath)[0]
+        return run_cmd(cmd, cwd=dirpath, description='UNPACK ARCHIVE')[0]
     elif archive.endswith('.tar.xz'):
         return _unpack_archive_xz(archive, dirpath)
     else:
         raise ValueError('Format not supported')
 
 
-def run_cmd(cmd,
-            outfile=sys.stdout,
-            errfile=sys.stderr,
-            infile=None,
-            cwd='.',
-            shell=False,
-            env=None):
+def run_cmd_old(cmd,
+                outfile=sys.stdout,
+                errfile=sys.stderr,
+                infile=None,
+                cwd='.',
+                shell=False,
+                env=None):
     '''argument cmd should be a list'''
-    openfile = lambda filename, mode: \
+    
+    def openfile(filename, mode):
         open(filename, mode) if(isinstance(filename, str)) else filename
 
     out = openfile(outfile, 'w')
@@ -175,7 +133,6 @@ def run_cmd(cmd,
     inn = openfile(infile, 'r')
 
     if isinstance(cmd, str):
-        #cmd = shlex.split(cmd)
         shell = True
 
     environ = dict(os.environ) if env is None else env
@@ -193,11 +150,65 @@ def run_cmd(cmd,
     except subprocess.CalledProcessError as err:
         return (err.returncode, environ)
     finally:
-        closefile = lambda filename, fileobj: \
+        def closefile(filename, fileobj):
             fileobj.close() if(isinstance(filename, str)) else None
+
         closefile(outfile, out)
         closefile(errfile, err)
         closefile(infile, inn)
+
+
+def run_cmd(cmd,
+            outfile=sys.stdout,
+            errfile=sys.stderr,
+            infile=None,
+            cwd='.',
+            shell=False,
+            env=None,
+            description='UNKNOWN'):
+    '''argument cmd should be a list'''
+    
+    def openfile(filename, mode):
+        return open(filename, mode) if(isinstance(filename, str)) else filename
+
+    def closefile(filename, fileobj):
+        if isinstance(filename, str):
+            fileobj.close()
+
+    out = openfile(outfile, 'w')
+    err = openfile(errfile, 'w')
+    inn = openfile(infile, 'r')
+
+    if isinstance(cmd, str):
+        shell = True
+
+    environ = dict(os.environ) if env is None else env
+    environ['PWD'] = osp.abspath(cwd)
+    
+    try:
+        logging.info('%s COMMAND %s', description, cmd)
+        logging.info('%s WORKING DIR %s', description, environ['PWD'])
+
+        popen = subprocess.Popen(cmd,
+                                 stdout=out,
+                                 stderr=err,
+                                 stdin=inn,
+                                 shell=shell,
+                                 cwd=environ['PWD'],
+                                 env=environ)
+        popen.wait()
+        exit_code = popen.returncode
+    except subprocess.CalledProcessError as err:
+        exit_code = err.returncode
+    finally:
+        logging.info('%s EXIT CODE %s', description, exit_code)
+        logging.info('%s ENVIRONMENT %s', description, environ)
+
+        closefile(outfile, out)
+        closefile(errfile, err)
+        closefile(infile, inn)
+        
+    return (exit_code, environ)
 
 
 def os_path_join(basepath, subdir):

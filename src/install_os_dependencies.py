@@ -32,10 +32,9 @@ def install(input_dir):
             if this_platform_deps in os_deps:
                 if os_deps[this_platform_deps]:
                     pkg_installer = os.getenv('VMOSPACKAGEINSTALL')
-                    exit_code, environ = utillib.run_cmd([pkg_installer, os_deps_file])
+                    exit_code, environ = utillib.run_cmd([pkg_installer, os_deps_file],
+                                                         description='OS DEPENDENCIES INSTALLATION')
                     status_dot_out.update_task_status(exit_code)
-                    logging.info('OS DEPENDENCIES INSTALLATION ERROR CODE: %d', exit_code)
-                    logging.info('OS DEPENDENCIES INSTALLATION ENVIRONMENT: %s', environ)
 
                     if exit_code != 0:
                         raise InstallOSDependenciesFailedError("Failed to install dependencies '{0}'".format(os_deps[this_platform_deps]))
