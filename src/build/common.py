@@ -7,8 +7,8 @@ LANG_EXT_MAPPING = {'javascript': ['.js'],
                     'xml': ['.xml'],
                     'php': ['.php'],
                     'perl': ['.pl', '.pm'],
-                    'python2': ['.py'],
-                    'python3': ['.py']}
+                    'python-2': ['.py'],
+                    'python-3': ['.py']}
 
 
 class EmptyPackageError(Exception):

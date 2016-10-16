@@ -1,7 +1,7 @@
 import os
 import os.path as osp
 import logging
-from abc import ABCMeta
+# from abc import ABCMeta
 
 from .common import PKG_ROOT_DIRNAME
 from .common import LANG_EXT_MAPPING
@@ -17,7 +17,8 @@ from ..utillib import UnpackArchiveError
 from ..utillib import NotADirectoryException
 
 
-#class Package(ABCMeta):
+# This must be an abstract class
+# class Package(ABCMeta):
 class Package:
 
     @classmethod
@@ -34,7 +35,6 @@ class Package:
         new_env = dict(os.environ)
         if 'PWD' in new_env:
             new_env['PWD'] = pwd
-
         return new_env
 
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
@@ -105,5 +105,19 @@ class Package:
                                              osp.relpath(outfile, build_root_dir),
                                              osp.relpath(errfile, build_root_dir))
 
+    def get_src_files(self, pkg_dir, exclude_filter):
+
+        fileset = set()
+        fileset.update(utillib.get_file_list(pkg_dir,
+                                             None,
+                                             Package.get_file_types(self.pkg_conf['package-language'])))
+        
+        file_filters = utillib.get_file_filters(pkg_dir, exclude_filter.split(','))
+        fileset = fileset.difference(file_filters.exclude_files)
+        fileset = fileset.difference(_file for _file in fileset
+                                     for exdir in file_filters.exclude_dirs
+                                     if _file.startswith(osp.join(exdir, '')))
+        return fileset
+    
     def build(self, build_root_dir):
         raise NotImplementedError()

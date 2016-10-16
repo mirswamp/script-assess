@@ -263,8 +263,6 @@ class SwaTool:
 
         if 'tool-env' in self._tool_conf:
             tool_env = self._tool_conf['tool-env']
-            # new_env.update({a[0] : a[2] for a in \
-            #                 map(lambda s: s.partition('='), tool_env.split(','))})
             new_env.update(((var_val.partition('=')[0], var_val.partition('=')[2])
                             for var_val in tool_env.split(',')))
         return new_env
@@ -293,17 +291,6 @@ class SwaTool:
                     raise ToolInstallFailedError("Install Tool Failed, "
                                                  "Command '{0}' return {1}".format(install_cmd,
                                                                                    exit_code))
-
-    def _validate_exit_code_old(self, exit_code):
-        if 'valid-exit-status' in self._tool_conf:
-            regex = re.compile(self._tool_conf['valid-exit-status'])
-            m = regex.match(str(exit_code))
-            if m is None:
-                return False
-            else:
-                return True if m.group(0) == str(exit_code) else False
-        else:
-            return True if(exit_code == 0) else False
                                
     def _validate_exit_code(self, exit_code):
         if 'valid-exit-status' in self._tool_conf:

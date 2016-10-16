@@ -86,12 +86,8 @@ class BuildSummary:
         web_xml = BuildSummary._add(build_artifacts_xml, 'web-src')
 
         for lang, ext in LANG_EXT_MAPPING.items():
-            if isinstance(ext, str):
-                files = [_file for _file in fileset
-                         if osp.splitext(_file)[1] == ext]
-            else:
-                files = [_file for _file in fileset
-                         if osp.splitext(_file)[1] in ext]
+            files = [_file for _file in fileset
+                     if osp.splitext(_file)[1] in ext]
 
             if files:
                 self._add_file_set(web_xml, lang, files)

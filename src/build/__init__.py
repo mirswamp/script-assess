@@ -3,7 +3,8 @@ import os.path as osp
 import shutil
 import logging
 
-from .build_web import JsNodePkg
+from .package_web import JsNodePkg
+from .package_python import PythonPkg
 from .common import EmptyPackageError
 from .common import CommandFailedError
 
@@ -21,9 +22,11 @@ def get_pkg_obj(pkg_conf_file, input_root_dir, build_root_dir):
 
     web_pkg_types = {
         'npm': JsNodePkg,
-        'no-build': JsNodePkg,
         'composer': JsNodePkg,
         'pear': JsNodePkg,
+        'no-build': JsNodePkg,
+        'python-distutils': PythonPkg,
+        'python-setuptools': PythonPkg
     }
 
     build_sys = pkg_conf['build-sys']
