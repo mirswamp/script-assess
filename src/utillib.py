@@ -267,8 +267,8 @@ def write_to_file(filename, obj):
                 print(entity, file=fobj)
 
 
-PARAM_REGEX = re.compile(r'<(?P<name>[a-zA-Z][a-zA-Z_-]*)(?:[%](?P<sep>[^>]+))?>')
-
+#PARAM_REGEX = re.compile(r'<(?P<name>[a-zA-Z][a-zA-Z_-]*)(?:[%](?P<sep>[^>]+))?>')
+PARAM_REGEX = re.compile(r'<(?P<name>[a-zA-Z][a-zA-Z0-9_-]*)(?:[%](?P<sep>[^>]+))?>')
 
 def string_substitute(string_template, symbol_table):
     '''Substitues environment variables and
