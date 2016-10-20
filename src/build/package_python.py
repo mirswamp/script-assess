@@ -17,18 +17,15 @@ class PythonPkg(Package):
 
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
         Package.__init__(self, pkg_conf_file, input_root_dir, build_root_dir)
-        self._setup_python(input_root_dir)
-        self._create_venv(build_root_dir)
 
-    def _setup_python(self, input_root_dir):
-        pass
+        self._create_venv(input_root_dir, build_root_dir)
 
     def _get_env(self):
         new_env = dict(os.environ)
         new_env['PATH'] = '%s:%s' % (self.venv_dir, new_env['PATH'])
         return new_env
     
-    def _create_venv(self, build_root_dir):
+    def _create_venv(self, input_root_dir, build_root_dir):
         python_lang = self.pkg_conf['package-language'].lower()
 
         if python_lang == 'python-2 python-3':
@@ -38,21 +35,24 @@ class PythonPkg(Package):
             
         logging.info('Python language version %s' % self.python_lang_version)
 
-        venv_cmd = 'pyvenv venv' if self.python_lang_version == 3 else 'virtualenv venv'
+        if self.python_lang_version == 3:
+            venv_cmd = osp.expandvars('${SWAMP_PYTHON3_HOME}/bin/pyvenv venv')
+        else:
+            venv_cmd = osp.expandvars('${SWAMP_PYTHON2_HOME}/bin/virtualenv venv')
 
         exit_code, _ = utillib.run_cmd(venv_cmd, cwd=build_root_dir, description='CREATE VENV')
         self.venv_dir = osp.join(build_root_dir, 'venv/bin')
 
-        pip_upgrade_cmd = 'pip install --upgrade pip'
+        # pip_upgrade_cmd = 'pip install --upgrade pip'
         
-        if self.python_lang_version == 3:
-            # install wheel
-            pip_upgrade_cmd = pip_upgrade_cmd + ' && pip install wheel'
+        # if self.python_lang_version == 3:
+        #     # install wheel
+        #     pip_upgrade_cmd = pip_upgrade_cmd + ' && pip install wheel'
             
-        utillib.run_cmd(pip_upgrade_cmd,
-                        cwd=build_root_dir,
-                        env=self._get_env(),
-                        description='CREATE VENV')
+        # utillib.run_cmd(pip_upgrade_cmd,
+        #                 cwd=build_root_dir,
+        #                 env=self._get_env(),
+        #                 description='CREATE VENV')
 
     def get_build_cmd(self):
 

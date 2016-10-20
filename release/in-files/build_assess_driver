@@ -38,7 +38,7 @@ done
 export SWAMP_DIR=/opt/swamp-base
 
 function untar {
-    sudo tar -xf "$1" --directory="$2" && { tar tf "$1" | cut -d / -f 1 | uniq; }
+    sudo tar -xpf "$1" --directory="$2" && { tar tf "$1" | cut -d / -f 1 | uniq; }
 }
 
 function get_conf_value {
@@ -61,9 +61,10 @@ fi
 
 set -x -v
 
-OPT_SWAMP_DIR=/opt/swamp-base
+OPT_SWAMP_DIR=/opt/swamp
+OPT_SWAMP_BASE_DIR=/opt/swamp-base
 
-[[ ! -d $OPT_SWAMP_DIR ]] && mkdir $OPT_SWAMP_DIR
+[[ ! -d $OPT_SWAMP_BASE_DIR ]] && mkdir $OPT_SWAMP_BASE_DIR
 
 if [[ "$(uname -p)" == "x86_64" ]]; then 
 	NODE_ARCHIVE="$VMINPUTDIR/node-v6.4.0-linux-x64.tar.xz"
@@ -71,8 +72,18 @@ else
 	NODE_ARCHIVE="$VMINPUTDIR/node-v6.4.0-linux-x86.tar.xz"
 fi
 
-NODE_DIR=$(untar $NODE_ARCHIVE $OPT_SWAMP_DIR)
-[[ $? == 0 ]] && export PATH="$OPT_SWAMP_DIR/$NODE_DIR/bin:$PATH"
+NODE_DIR=$(untar $NODE_ARCHIVE $OPT_SWAMP_BASE_DIR)
+[[ $? == 0 ]] && export PATH="$OPT_SWAMP_BASE_DIR/$NODE_DIR/bin:$PATH"
+
+if [[ -f "$VMINPUTDIR/python-2-bin.tar.gz" ]]; then
+    tar xpf "$VMINPUTDIR/python-2-bin.tar.gz" -C $OPT_SWAMP_DIR \
+        && export SWAMP_PYTHON2_HOME="$OPT_SWAMP_DIR/python2"
+fi
+
+if [[ -f "$VMINPUTDIR/python-3-bin.tar.gz" ]]; then
+    tar xpf "$VMINPUTDIR/python-3-bin.tar.gz" -C $OPT_SWAMP_DIR \
+        && export SWAMP_PYTHON3_HOME="$OPT_SWAMP_DIR/python3"
+fi
 
 echo
 echo $p: setup environment
