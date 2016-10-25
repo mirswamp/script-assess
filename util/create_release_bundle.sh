@@ -10,23 +10,23 @@ make_cksum=true
 
 while [ $# -gt 0 ] ; do
     case $1 in
-	--no-tar)
-	    make_tarball=false
-	    ;;
-	--no-ck)
-	    make_cksum=false
-	    ;;
-	--test)
-	    make_tarball=false
-	    make_cksum=false
-	    ;;
-	-*)
-	    echo $p: $1: unkown optarg 1>&2
-	    exit 1
-	    ;;
-	*)
-	    break
-	    ;;
+		--no-tar)
+			make_tarball=false
+			;;
+		--no-ck)
+			make_cksum=false
+			;;
+		--test)
+			make_tarball=false
+			make_cksum=false
+			;;
+		-*)
+			echo $p: $1: unkown optarg 1>&2
+			exit 1
+			;;
+		*)
+			break
+			;;
     esac
     shift
 done
@@ -56,36 +56,60 @@ function md5_sum {
     local dest_dir="$1"
 
     (
-	cd "$dest_dir"
-	local checksumfile="md5sum"
+		cd "$dest_dir"
+		local checksumfile="md5sum"
 
-	if test "$(uname -s)" == "Darwin"; then
-	    local MD5EXE="md5"
-	elif test "$(uname -s)" == "Linux"; then
-	    local MD5EXE="md5sum"
-	fi
+		if test "$(uname -s)" == "Darwin"; then
+			local MD5EXE="md5"
+		elif test "$(uname -s)" == "Linux"; then
+			local MD5EXE="md5sum"
+		fi
 
-	find . -type f ! -name "$checksumfile" -exec "$MD5EXE" '{}' ';' > "$checksumfile"
+		find . -type f ! -name "$checksumfile" -exec "$MD5EXE" '{}' ';' > "$checksumfile"
     )
+}
+
+function create_dir {
+	local dir="$1";
+
+    if [[ ! -d "$1" ]]; then
+		mkdir -p "$1"
+    else
+		rm -rf "$1"/*
+    fi
+}
+
+function create_links {
+	local common="$1"
+	local plat="$2"
+
+	(
+		cd $plat;
+		for FILE in $(find $common -type f); do
+			ln -s ../../common/in-files/$(basename $FILE)
+		done
+	)
 }
 
 function main {
 
     #local framework="$(basename $PWD)"
-    local framework="script-assess"
+    local framework="script-assess-v2"
     local new_version="$2"
     local dest_dir="$1/$framework-$new_version"
 
-    local main_plat="noarch"
+    local main_plat="common"
 
-    if [[ ! -d "$dest_dir/$main_plat" ]]; then
-	mkdir -p "$dest_dir/$main_plat"
-    else
-	rm -rf "$dest_dir/$main_plat"/*
-    fi
-
+    create_dir "$dest_dir/$main_plat"
     copy_scripts "$dest_dir/$main_plat"
-    cp $PWD/release/{LICENSE.txt,RELEASE_NOTES.txt} "$dest_dir"
+
+	for plat in ubuntu-16.04-64; do
+		create_dir "$dest_dir/$plat/in-files"
+		cp "$p_swamp/frameworks/python/python-3-arch/$plat/python-3-bin.tar.gz"  "$dest_dir/$plat/in-files"
+		cp "$p_swamp/frameworks/python/python-2-arch/$plat/python-2-bin.tar.gz"  "$dest_dir/$plat/in-files"
+		create_links "$dest_dir/$main_plat/in-files" "$dest_dir/$plat/in-files"
+	done
+	cp $PWD/release/{LICENSE.txt,RELEASE_NOTES.txt} "$dest_dir"
     md5_sum "$dest_dir"
 }
 
@@ -95,12 +119,12 @@ function copy_scripts {
     local release_dir="$PWD/release"
 
     [[ -d "$release_dir/swamp-conf" ]] && \
-	cp -r "$release_dir/swamp-conf" "$dest_dir"
+		cp -r "$release_dir/swamp-conf" "$dest_dir"
 
     FRAMEWORKS="/p/swamp/frameworks"
 
     if [[ ! -d "$FRAMEWORKS" ]]; then
-	FRAMEWORKS="$HOME/$FRAMEWORKS"
+		FRAMEWORKS="$HOME/$FRAMEWORKS"
     fi
 
     local NODEJS_x86_64=$(find "$FRAMEWORKS/node.js/noarch" -name 'node-v?.?.?-linux-x64.tar.xz' | sort | tail -n 1)
@@ -135,17 +159,17 @@ function copy_scripts {
     echo '' > $version_dir/__init__.py
 
     (
-	cd "$(dirname $scripts_dir)"
-	tar -c -z --file="$(basename $scripts_dir)"".tar.gz" "$(basename $scripts_dir)"
-	if [[ $? -eq 0 ]]; then
-	    rm -rf "$(basename $scripts_dir)"
-	fi
+		cd "$(dirname $scripts_dir)"
+		tar -c -z --file="$(basename $scripts_dir)"".tar.gz" "$(basename $scripts_dir)"
+		if [[ $? -eq 0 ]]; then
+			rm -rf "$(basename $scripts_dir)"
+		fi
     )
 }
 
 if [[ $# -ne 2 ]]; then
-	    echo "need a destination directory and a version an argument"
-	    exit 1
+	echo "need a destination directory and a version an argument"
+	exit 1
 fi
 
 main $@

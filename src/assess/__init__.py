@@ -11,6 +11,7 @@ from .web_tools import Retire
 from .web_tools import PhpTool
 from .web_tools import Lizard
 from .web_tools import JsTool
+from .python_tools import PythonTool
 
 from .. import utillib
 from .. import confreader
@@ -22,17 +23,20 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
 
     tool_conf_file = osp.join(input_root_dir, SwaToolBase.TOOL_DOT_CONF)
     tool_conf = confreader.read_conf_into_dict(tool_conf_file)
-
-    if tool_conf['tool-type'] == 'flow':
+    tool_type = tool_conf['tool-type'].lower()
+    
+    if tool_type == 'flow':
         swa_tool = Flow(input_root_dir, tool_root_dir)
-    elif tool_conf['tool-type'] == 'retire-js':
+    elif tool_type == 'retire-js':
         swa_tool = Retire(input_root_dir, tool_root_dir)
-    elif tool_conf['tool-type'] in ['php_codesniffer', 'phpmd']:
+    elif tool_type in ['php_codesniffer', 'phpmd']:
         swa_tool = PhpTool(input_root_dir, tool_root_dir)
-    elif tool_conf['tool-type'] == 'cloc':
+    elif tool_type == 'cloc':
         swa_tool = SwaTool(input_root_dir, tool_root_dir)
-    elif tool_conf['tool-type'] == 'lizard':
+    elif tool_type == 'lizard':
         swa_tool = Lizard(input_root_dir, tool_root_dir)
+    elif tool_type in ['pylint', 'bandit', 'flake8']:
+        swa_tool = PythonTool(input_root_dir, build_summary_file, tool_root_dir)
     else:
         swa_tool = JsTool(input_root_dir, tool_root_dir)
 
@@ -46,7 +50,7 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
                 exit_code = 0
                 status_dot_out.skip_task('no files')
                 # status_dot_out.skip_task(task_msg=None,
-                # task_msg_indetail="No relavent files found to run '%s'" % tool_conf['tool-type'])
+                # task_msg_indetail="No relavent files found to run '%s'" % tool_type)
             else:
                 exit_code = 1 if(failed) else 0
                 status_dot_out.update_task_status(exit_code,
