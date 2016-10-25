@@ -17,7 +17,7 @@ class PythonTool(SwaTool):
         self.venv_dir = osp.join(build_root_dir, PythonPkg.VENV_SUB_DIR)
         
     def _get_env(self):
-        new_env = super._get_env()
+        new_env = super()._get_env()
         new_env['PATH'] = '%s:%s' % (self.venv_dir, new_env['PATH'])
         return new_env
 
