@@ -1,6 +1,5 @@
 import os
 import os.path as osp
-import logging
 # from abc import ABCMeta
 
 from .common import PKG_ROOT_DIRNAME
@@ -41,6 +40,7 @@ class Package:
 
         self.pkg_conf = confreader.read_conf_into_dict(pkg_conf_file)
         self.pkg_conf['package-language'] = self.pkg_conf['package-language'].lower()
+        self.input_root_dir = input_root_dir
         
         with LogTaskStatus('package-unarchive'):
             pkg_archive = osp.join(input_root_dir, self.pkg_conf['package-archive'])
@@ -120,4 +120,4 @@ class Package:
         return fileset
     
     def build(self, build_root_dir):
-        raise NotImplementedError()
+        raise NotImplementedError('Cannot use this class directly')

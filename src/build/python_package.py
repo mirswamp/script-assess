@@ -9,6 +9,7 @@ from .build_summary import BuildSummary
 from .common import CommandFailedError
 
 from .. import utillib
+from .. import confreader
 from ..utillib import NotADirectoryException
 from ..logger import LogTaskStatus
 
@@ -31,7 +32,15 @@ class PythonPkg(Package):
         python_lang = self.pkg_conf['package-language'].lower()
 
         if python_lang == 'python-2 python-3':
-            self.python_lang_version = 3
+            run_conf = confreader.read_conf_into_dict(osp.join(input_root_dir, 'run.conf'))
+            if 'assess' not in run_conf['goal']:
+                self.python_lang_version = 3
+            else:
+                tool_conf = confreader.read_conf_into_dict(osp.join(input_root_dir, 'tool.conf'))
+                if 'python-flavor' in tool_conf:
+                    self.python_lang_version = int(tool_conf['python-flavor'])
+                else:
+                    self.python_lang_version = 3
         else:
             self.python_lang_version = int(python_lang[-1])
             
@@ -45,25 +54,14 @@ class PythonPkg(Package):
         exit_code, _ = utillib.run_cmd(venv_cmd, cwd=build_root_dir, description='CREATE VENV')
         self.venv_dir = osp.join(build_root_dir, PythonPkg.VENV_SUB_DIR)
 
-        # pip_upgrade_cmd = 'pip install --upgrade pip'
-        
-        # if self.python_lang_version == 3:
-        #     # install wheel
-        #     pip_upgrade_cmd = pip_upgrade_cmd + ' && pip install wheel'
-            
-        # utillib.run_cmd(pip_upgrade_cmd,
-        #                 cwd=build_root_dir,
-        #                 env=self._get_env(),
-        #                 description='CREATE VENV')
+        # Changing the language in case if it is 'Python-2 Python-3' to self.python_lang_version
+        self.pkg_conf['package-language'] = 'Python-{0}'.format(self.python_lang_version)
 
     def get_build_cmd(self):
+        raise NotImplementedError('Cannot use this class directly')
 
-        if self.pkg_conf['build-sys'] in ['python-distutils', 'python-setuptools']:
-            build_cmd = 'python'
-            build_cmd += ' ' + self.pkg_conf.get('build-file', 'setup.py')
-            build_cmd += ' ' + self.pkg_conf.get('build-target', 'build')
-            build_cmd += ' ' + self.pkg_conf.get('build-opt', '')
-            return build_cmd
+    def get_main_dir(self, pkg_build_dir):
+        yield pkg_build_dir
         
     def build(self, build_root_dir):
 
@@ -105,12 +103,41 @@ class PythonPkg(Package):
                                              osp.relpath(errfile, build_root_dir))
 
                 fileset = set()
-                for pattern in glob.glob(osp.join(pkg_build_dir, 'build/lib*')):
-                    fileset.update(self.get_src_files(pattern,
-                                                      self.pkg_conf.get('package-exclude-paths', '')))
+                for dir_path in self.get_main_dir(pkg_build_dir):
+                    fileset.update(self.get_src_files(dir_path,
+                                                      self.pkg_conf.get('package-exclude-paths',
+                                                                        '')))
 
                 build_summary.add_exit_code(exit_code)
                 build_summary.add_build_artifacts(fileset)
                 return (exit_code, BuildSummary.FILENAME)
 
-                    
+
+class PythonDistUtilsPkg(PythonPkg):
+
+    def get_build_cmd(self):
+        build_cmd = 'python'
+        build_cmd += ' ' + self.pkg_conf.get('build-file', 'setup.py')
+        build_cmd += ' ' + self.pkg_conf.get('build-target', 'build')
+        build_cmd += ' ' + self.pkg_conf.get('build-opt', '')
+        return build_cmd
+
+    def get_main_dir(self, pkg_build_dir):
+        return glob.glob(osp.join(pkg_build_dir, 'build/lib*'))
+    
+            
+class PythonWheelPkg(PythonPkg):
+
+    def get_build_cmd(self):
+        return 'pip install {0}'.format(osp.join(self.input_root_dir,
+                                                 self.pkg_conf['package-archive']))
+
+
+class PythonOtherPkg(PythonPkg):
+
+    def get_build_cmd(self):
+        return '{0} {1} {2} {3}'.format(self.pkg_conf.get('build-cmd', ''),
+                                        self.pkg_conf.get('build-file', ''),
+                                        self.pkg_conf.get('build-opt', ''),
+                                        self.pkg_conf.get('build-target', ''))
+

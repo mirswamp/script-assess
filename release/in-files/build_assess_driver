@@ -76,12 +76,12 @@ NODE_DIR=$(untar $NODE_ARCHIVE $OPT_SWAMP_BASE_DIR)
 [[ $? == 0 ]] && export PATH="$OPT_SWAMP_BASE_DIR/$NODE_DIR/bin:$PATH"
 
 if [[ -f "$VMINPUTDIR/python-2-bin.tar.gz" ]]; then
-    tar xpf "$VMINPUTDIR/python-2-bin.tar.gz" -C $OPT_SWAMP_DIR \
+    sudo tar xpf "$VMINPUTDIR/python-2-bin.tar.gz" -C $OPT_SWAMP_DIR \
         && export SWAMP_PYTHON2_HOME="$OPT_SWAMP_DIR/python2"
 fi
 
 if [[ -f "$VMINPUTDIR/python-3-bin.tar.gz" ]]; then
-    tar xpf "$VMINPUTDIR/python-3-bin.tar.gz" -C $OPT_SWAMP_DIR \
+    sudo tar xpf "$VMINPUTDIR/python-3-bin.tar.gz" -C $OPT_SWAMP_DIR \
         && export SWAMP_PYTHON3_HOME="$OPT_SWAMP_DIR/python3"
 fi
 

@@ -95,20 +95,23 @@ def unpack_archive(archive, dirpath, createdir=True):
     archive = osp.abspath(archive)
     dirpath = osp.abspath(dirpath)
 
-    cmd_template_dict = {'.tar.gz': 'tar -x -z -f %s',
-                         '.tgz': 'tar -x -z -f %s',
-                         '.tar.Z': 'tar -x -Z -f %s',
-                         '.tar.bz2': 'tar -x -j -f %s',
-                         '.tar': 'tar -x -f %s',
-                         '.zip': 'unzip -qq -o %s',
-                         '.jar': 'unzip -qq -o %s',
-                         '.war': 'unzip -qq -o %s',
-                         '.ear': 'unzip -qq -o %s',
-                         '.phar': 'phar extract -f %s'}
+    cmd_template_dict = {'.tar.gz': 'tar -x -z -f {0}',
+                         '.tgz': 'tar -x -z -f {0}',
+                         '.tar.Z': 'tar -x -Z -f {0}',
+                         '.tar.bz2': 'tar -x -j -f {0}',
+                         '.tar': 'tar -x -f {0}',
+                         '.zip': 'unzip -qq -o {0}',
+                         '.jar': 'unzip -qq -o {0}',
+                         '.war': 'unzip -qq -o {0}',
+                         '.ear': 'unzip -qq -o {0}',
+                         '.phar': 'phar extract -f {0}',
+                         #'whl': 'wheel unpack --dest {1} {0}'
+                         '.whl': 'unzip -qq -o {0}',
+    }
 
     if any((archive.endswith(ext) for ext in cmd_template_dict)):
-        cmd = [cmd_template_dict[ext] % archive
-               for ext in cmd_template_dict if archive.endswith(ext)][0]
+        cmd_template = [cmd_template_dict[ext] for ext in cmd_template_dict if archive.endswith(ext)][0]
+        cmd = cmd_template.format(archive, dirpath)
         return run_cmd(cmd, cwd=dirpath, description='UNPACK ARCHIVE')[0]
     elif archive.endswith('.tar.xz'):
         return _unpack_archive_xz(archive, dirpath)

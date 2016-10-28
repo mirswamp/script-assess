@@ -2,7 +2,7 @@ import os.path as osp
 
 from .helper import BuildArtifactsHelper
 from .swa_tool import SwaTool
-from ..build.package_python import PythonPkg
+from ..build.python_package import PythonPkg
 
 
 class PythonTool(SwaTool):
