@@ -16,7 +16,8 @@ from ..logger import LogTaskStatus
 
 class PythonPkg(Package):
 
-    VENV_SUB_DIR = 'venv/bin'
+    VENV_DIR = 'venv/bin'
+    VENV_BIN_DIR = osp.join(VENV_DIR, 'bin')
     
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
         Package.__init__(self, pkg_conf_file, input_root_dir, build_root_dir)
@@ -52,7 +53,7 @@ class PythonPkg(Package):
             venv_cmd = osp.expandvars('${SWAMP_PYTHON2_HOME}/bin/virtualenv venv')
 
         exit_code, _ = utillib.run_cmd(venv_cmd, cwd=build_root_dir, description='CREATE VENV')
-        self.venv_dir = osp.join(build_root_dir, PythonPkg.VENV_SUB_DIR)
+        self.venv_dir = osp.join(build_root_dir, PythonPkg.VENV_BIN_DIR)
 
         # Changing the language in case if it is 'Python-2 Python-3' to self.python_lang_version
         self.pkg_conf['package-language'] = 'Python-{0}'.format(self.python_lang_version)

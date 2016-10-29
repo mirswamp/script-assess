@@ -30,7 +30,7 @@ def get_pkg_obj(pkg_conf_file, input_root_dir, build_root_dir):
         'python-distutils': PythonDistUtilsPkg,
         'python-setuptools': PythonDistUtilsPkg,
         'wheels': PythonWheelPkg,
-        'other': PythonOtherPkg
+        'other': PythonOtherPkg,
         'none': PythonOtherPkg
     }
 

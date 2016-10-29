@@ -236,6 +236,7 @@ class SwaTool(SwaToolBase):
         assessment_summary_file = osp.join(results_root_dir, 'assessment_summary.xml')
         build_artifacts_helper = BuildArtifactsHelper(build_summary_file)
         self._set_tool_config(build_artifacts_helper.get_pkg_dir())
+
         logging.info('TOOL CONF: %s', self._tool_conf)
 
         passed = 0
