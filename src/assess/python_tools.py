@@ -29,7 +29,7 @@ class PythonTool(SwaTool):
         regex = re.compile('Python-(?P<version>[23])')
         m = regex.search(pkg_lang)
         if m:
-            python_lang_version = m.group('version')
+            python_lang_version = int(m.group('version'))
             if python_lang_version == 2:
                 self.venv_lib = '{0}/lib/python2.7/site-packages'.format(osp.join(build_root_dir,
                                                                                   PythonPkg.VENV_DIR))
@@ -41,18 +41,18 @@ class PythonTool(SwaTool):
                                                                              major_version)
 
     def _get_python_major_version(self, python_lang_version):
-        
-        #version = subprocess.check_output(['python', '--version'],
-        #                                  self._get_env()).decode(encoding='utf-8').strip()
-        regex = re.compile('Python\s*(?P<major_version>\d[.]\d)[.]\d')
-        m = regex.match('Python 3.5.2')
-        if m:
-            return m.group('major_version')
+        python_exe = osp.expandvars('$SWAMP_PYTHON{0}_HOME/bin/python{0}'.format(python_lang_version))
+        version = subprocess.check_output([python_exe,
+                                           '--version']).decode(encoding='utf-8').strip()
+
+        match = re.compile('Python\s*(?P<major_version>\d[.]\d)[.]\d').match(version)
+        if match:
+            return match.group('major_version')
             
     def _get_env(self):
         new_env = super()._get_env()
         new_env['PATH'] = '{0}:{1}'.format(self.venv_bin, new_env['PATH'])
-        if self.venv_lib:
+        if hasattr(self, 'venv_lib') and self.venv_lib:
             new_env['PYTHONPATH'] = self.venv_lib
         return new_env
 
@@ -80,5 +80,6 @@ class Flake8(PythonTool):
             for filename in ['.flake8', 'setup.cfg', 'tox.ini']:
                 local_config_file = os.join(pkg_dir, filename)
                 if osp.isfile(local_config_file):
-                    os.rename(filename, '{0}-original'.format(filename)
+                    os.rename(filename, '{0}-original'.format(filename))
 
+                              

@@ -16,7 +16,7 @@ from ..logger import LogTaskStatus
 
 class PythonPkg(Package):
 
-    VENV_DIR = 'venv/bin'
+    VENV_DIR = 'venv'
     VENV_BIN_DIR = osp.join(VENV_DIR, 'bin')
     
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
