@@ -85,6 +85,10 @@ if [[ -f "$VMINPUTDIR/python-3-bin.tar.gz" ]]; then
         && export SWAMP_PYTHON3_HOME="$OPT_SWAMP_DIR/python3"
 fi
 
+LOCAL_USER=$(whoami)
+mkdir "$HOME/.cache" && \
+	sudo chown -R $LOCAL_USER.$LOCAL_USER "$HOME/.cache"
+
 echo
 echo $p: setup environment
 export BUILD_DIR="${HOME}/build"

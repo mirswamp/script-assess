@@ -21,7 +21,6 @@ class PythonPkg(Package):
     
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
         Package.__init__(self, pkg_conf_file, input_root_dir, build_root_dir)
-
         self._create_venv(input_root_dir, build_root_dir)
 
     def _get_env(self):
@@ -58,11 +57,17 @@ class PythonPkg(Package):
         # Changing the language in case if it is 'Python-2 Python-3' to self.python_lang_version
         self.pkg_conf['package-language'] = 'Python-{0}'.format(self.python_lang_version)
 
+    def _install_pkg_dependencies(self, build_root_dir, build_summary):
+        pass
+        
     def get_build_cmd(self):
         raise NotImplementedError('Cannot use this class directly')
 
     def get_main_dir(self, pkg_build_dir):
         yield pkg_build_dir
+        
+    def post_build(self, pkg_build_dir):
+        pass
         
     def build(self, build_root_dir):
 
@@ -71,7 +76,8 @@ class PythonPkg(Package):
                           self.pkg_conf) as build_summary:
 
             self._configure(build_root_dir, build_summary)
-
+            self._install_pkg_dependencies(build_root_dir, build_summary)
+            
             with LogTaskStatus('build'):
 
                 pkg_build_dir = osp.normpath(osp.join(self.pkg_dir,
@@ -88,6 +94,8 @@ class PythonPkg(Package):
 
                 exit_code, environ = utillib.run_cmd(build_cmd,
                                                      cwd=pkg_build_dir,
+                                                     outfile=outfile,
+                                                     errfile=errfile,
                                                      env=self._get_env(),
                                                      description='BUILD')
                 
@@ -96,20 +104,22 @@ class PythonPkg(Package):
                                           environ['PWD'],
                                           outfile, errfile)
 
+                build_summary.add_exit_code(exit_code)
+
                 if exit_code != 0:
-                    build_summary.add_exit_code(exit_code)
                     raise CommandFailedError(build_cmd, exit_code,
                                              BuildSummary.FILENAME,
                                              osp.relpath(outfile, build_root_dir),
                                              osp.relpath(errfile, build_root_dir))
 
+                self.post_build(pkg_build_dir)
+                
                 fileset = set()
                 for dir_path in self.get_main_dir(pkg_build_dir):
                     fileset.update(self.get_src_files(dir_path,
                                                       self.pkg_conf.get('package-exclude-paths',
                                                                         '')))
 
-                build_summary.add_exit_code(exit_code)
                 build_summary.add_build_artifacts(fileset)
                 return (exit_code, BuildSummary.FILENAME)
 
@@ -126,12 +136,64 @@ class PythonDistUtilsPkg(PythonPkg):
     def get_main_dir(self, pkg_build_dir):
         return glob.glob(osp.join(pkg_build_dir, 'build/lib*'))
     
+    def _install_pkg_dependencies(self, build_root_dir, build_summary):
+
+        if 'package-pip-install-file' in self.pkg_conf:
+
+            pip_cmd = 'pip install -r {0} {1}'.format(osp.join(self.pkg_dir,
+                                                               self.pkg_conf['package-pip-install-file']),
+                                                      self.pkg_conf.get('package-pip-install-opt', ''))
             
+            outfile = osp.join(build_root_dir, 'pip_install.out')
+            errfile = osp.join(build_root_dir, 'pip_install.err')
+
+            exit_code, environ = utillib.run_cmd(pip_cmd,
+                                                 cwd=self.pkg_dir,
+                                                 outfile=outfile,
+                                                 errfile=errfile,
+                                                 env=self._get_env(),
+                                                 description='PIP INSTALL')
+
+            build_summary.add_command('pip-install', pip_cmd,
+                                      [], exit_code, environ,
+                                      environ['PWD'],
+                                      outfile, errfile)
+            
+    # def post_build(self, pkg_build_dir):
+    #     install_cmd = 'python'
+    #     install_cmd += ' ' + self.pkg_conf.get('build-file', 'setup.py')
+    #     install_cmd += ' ' + self.pkg_conf.get('build-target', 'install')
+    #     install_cmd += ' ' + self.pkg_conf.get('build-opt', '')
+    #     utillib.run_cmd(install_cmd, cwd=pkg_build_dir, env=self._get_env())
+
+    
 class PythonWheelPkg(PythonPkg):
 
+    def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
+
+        self.pkg_conf = confreader.read_conf_into_dict(pkg_conf_file)
+        self.pkg_conf['package-language'] = self.pkg_conf['package-language'].lower()
+        self.input_root_dir = input_root_dir
+        
+        with LogTaskStatus('package-unarchive') as lts:
+            pkg_archive = osp.join(input_root_dir, self.pkg_conf['package-archive'])
+            pkg_root_dir = osp.join(build_root_dir, PKG_ROOT_DIRNAME)
+            pkg_dir = osp.normpath(osp.join(pkg_root_dir, self.pkg_conf['package-dir']))
+
+            if not osp.isdir(pkg_dir):
+                os.makedirs(pkg_dir)
+
+            self.pkg_dir = pkg_dir
+            lts.skip_task()
+
+        self._create_venv(input_root_dir, build_root_dir)
+        utillib.run_cmd('pip install wheel',
+                        env=self._get_env(),
+                        description='INSTALL PYTHON WHEEL')
+        
     def get_build_cmd(self):
-        return 'pip install {0}'.format(osp.join(self.input_root_dir,
-                                                 self.pkg_conf['package-archive']))
+        pkg_archive = osp.join(self.input_root_dir, self.pkg_conf['package-archive'])
+        return 'pip install {0} && wheel unpack --dest {1} {0}'.format(pkg_archive, self.pkg_dir)
 
 
 class PythonOtherPkg(PythonPkg):

@@ -2,6 +2,7 @@ import os
 import os.path as osp
 import re
 import subprocess
+import glob
 
 from .helper import BuildArtifactsHelper
 from .swa_tool import SwaTool
@@ -14,7 +15,8 @@ class PythonTool(SwaTool):
         self._set_venv_bin(build_summary_file)
         SwaTool.__init__(self, input_root_dir, tool_root_dir)
         self._set_venv_lib(build_summary_file)
-
+        self._get_pkg_lib(build_summary_file)
+        
     def _set_venv_bin(self, build_summary_file):
         build_artifact_helper = BuildArtifactsHelper(build_summary_file)
         build_root_dir = build_artifact_helper['build-root-dir']
@@ -48,12 +50,33 @@ class PythonTool(SwaTool):
         match = re.compile('Python\s*(?P<major_version>\d[.]\d)[.]\d').match(version)
         if match:
             return match.group('major_version')
+
+    def _get_pkg_lib(self, build_summary_file):
+        '''For setuptools and distutils package, <pkg-build-dir>/build/lib*'''
+        
+        build_artifact_helper = BuildArtifactsHelper(build_summary_file)
+        pkg_dir = build_artifact_helper.get_pkg_dir() 
+        build_dir = build_artifact_helper['build-dir']
+        if build_dir:
+            pkg_build_dir = osp.normpath(osp.join(pkg_dir, build_dir))
+        else:
+            pkg_build_dir = osp.normpath(pkg_dir)
+
+        pkg_lib = glob.glob(osp.join(pkg_build_dir, 'build/lib*'))
+
+        if pkg_lib:
+            self.pkg_lib = ':'.join(pkg_lib)
+        else:
+            self.pkg_lib = None
             
     def _get_env(self):
         new_env = super()._get_env()
         new_env['PATH'] = '{0}:{1}'.format(self.venv_bin, new_env['PATH'])
         if hasattr(self, 'venv_lib') and self.venv_lib:
             new_env['PYTHONPATH'] = self.venv_lib
+        if hasattr(self, 'pkg_lib') and self.pkg_lib:
+            new_env['PYTHONPATH'] = '{0}:{1}'.format(new_env['PYTHONPATH'],
+                                                     self.pkg_lib)
         return new_env
 
     

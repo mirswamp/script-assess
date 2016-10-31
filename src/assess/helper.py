@@ -88,13 +88,16 @@ class BuildArtifactsHelper:
         self._package_conf = {elem.tag: elem.text for elem in root.find('package-conf')}
 
     def __contains__(self, key):
-        return True if(key in self._build_summary) else False
+        return True if key in self._build_summary or key in self._package_conf else False
 
-    def __getitem__(self, key):
+    def __getitem__old(self, key):
         if key in self._build_summary:
             return self._build_summary[key]
         else:
             return self._package_conf.get(key, None)
+
+    def __getitem__(self, key):
+        return self._build_summary.get(key, self._package_conf.get(key, None))
 
     def get_pkg_dir(self):
         return osp.normpath(osp.join(osp.join(self._build_summary['build-root-dir'],
