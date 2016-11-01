@@ -29,9 +29,9 @@ class PythonPkg(Package):
         return new_env
     
     def _create_venv(self, input_root_dir, build_root_dir):
-        python_lang = self.pkg_conf['package-language'].lower()
+        pkg_lang = self.pkg_conf['package-language'].lower()
 
-        if python_lang == 'python-2 python-3':
+        if 'python-2 python-3' in pkg_lang:
             run_conf = confreader.read_conf_into_dict(osp.join(input_root_dir, 'run.conf'))
             if 'assess' not in run_conf['goal']:
                 self.python_lang_version = 3
@@ -41,11 +41,19 @@ class PythonPkg(Package):
                     self.python_lang_version = int(tool_conf['python-flavor'])
                 else:
                     self.python_lang_version = 3
-        else:
-            self.python_lang_version = int(python_lang[-1])
-            
-        logging.info('Python language version %s' % self.python_lang_version)
 
+            # Changing the language in case if it is 'Python-2 Python-3' to self.python_lang_version
+            self.pkg_conf['package-language'] = pkg_lang.replace('python-2 python-3',
+                                                                 'python-{0}'.format(self.python_lang_version))
+                    
+        elif 'python-2' in pkg_lang:
+            self.python_lang_version = 2
+        elif 'python-3' in pkg_lang:
+            self.python_lang_version = 3
+            
+        logging.info('PYTHON LANGUAGE VERSION: %s' % self.python_lang_version)
+        logging.info('PACKAGE LANGUAGE: %s' % pkg_lang)
+        
         if self.python_lang_version == 3:
             venv_cmd = osp.expandvars('${SWAMP_PYTHON3_HOME}/bin/pyvenv venv')
         else:
@@ -53,9 +61,6 @@ class PythonPkg(Package):
 
         exit_code, _ = utillib.run_cmd(venv_cmd, cwd=build_root_dir, description='CREATE VENV')
         self.venv_dir = osp.join(build_root_dir, PythonPkg.VENV_BIN_DIR)
-
-        # Changing the language in case if it is 'Python-2 Python-3' to self.python_lang_version
-        self.pkg_conf['package-language'] = 'Python-{0}'.format(self.python_lang_version)
 
     def _install_pkg_dependencies(self, build_root_dir, build_summary):
         pass
@@ -65,9 +70,6 @@ class PythonPkg(Package):
 
     def get_main_dir(self, pkg_build_dir):
         yield pkg_build_dir
-        
-    def post_build(self, pkg_build_dir):
-        pass
         
     def build(self, build_root_dir):
 
@@ -111,8 +113,6 @@ class PythonPkg(Package):
                                              BuildSummary.FILENAME,
                                              osp.relpath(outfile, build_root_dir),
                                              osp.relpath(errfile, build_root_dir))
-
-                self.post_build(pkg_build_dir)
                 
                 fileset = set()
                 for dir_path in self.get_main_dir(pkg_build_dir):
@@ -120,7 +120,7 @@ class PythonPkg(Package):
                                                       self.pkg_conf.get('package-exclude-paths',
                                                                         '')))
 
-                build_summary.add_build_artifacts(fileset)
+                build_summary.add_build_artifacts(fileset, self.pkg_conf['package-language'])
                 return (exit_code, BuildSummary.FILENAME)
 
 
@@ -138,33 +138,36 @@ class PythonDistUtilsPkg(PythonPkg):
     
     def _install_pkg_dependencies(self, build_root_dir, build_summary):
 
-        if 'package-pip-install-file' in self.pkg_conf:
+        with LogTaskStatus('install-pkg-dependencies') as lts:
 
-            pip_cmd = 'pip install -r {0} {1}'.format(osp.join(self.pkg_dir,
-                                                               self.pkg_conf['package-pip-install-file']),
-                                                      self.pkg_conf.get('package-pip-install-opt', ''))
-            
-            outfile = osp.join(build_root_dir, 'pip_install.out')
-            errfile = osp.join(build_root_dir, 'pip_install.err')
+            if 'package-pip-install-file' not in self.pkg_conf:
+                lts.skip_task('pip')
+            else:
+                pip_cmd = 'pip install -r {0} {1}'.format(osp.join(self.pkg_dir,
+                                                                   self.pkg_conf['package-pip-install-file']),
+                                                          self.pkg_conf.get('package-pip-install-opt', ''))
 
-            exit_code, environ = utillib.run_cmd(pip_cmd,
-                                                 cwd=self.pkg_dir,
-                                                 outfile=outfile,
-                                                 errfile=errfile,
-                                                 env=self._get_env(),
-                                                 description='PIP INSTALL')
+                outfile = osp.join(build_root_dir, 'pip_install.out')
+                errfile = osp.join(build_root_dir, 'pip_install.err')
 
-            build_summary.add_command('pip-install', pip_cmd,
-                                      [], exit_code, environ,
-                                      environ['PWD'],
-                                      outfile, errfile)
-            
-    # def post_build(self, pkg_build_dir):
-    #     install_cmd = 'python'
-    #     install_cmd += ' ' + self.pkg_conf.get('build-file', 'setup.py')
-    #     install_cmd += ' ' + self.pkg_conf.get('build-target', 'install')
-    #     install_cmd += ' ' + self.pkg_conf.get('build-opt', '')
-    #     utillib.run_cmd(install_cmd, cwd=pkg_build_dir, env=self._get_env())
+                exit_code, environ = utillib.run_cmd(pip_cmd,
+                                                     cwd=self.pkg_dir,
+                                                     outfile=outfile,
+                                                     errfile=errfile,
+                                                     env=self._get_env(),
+                                                     description='PIP INSTALL')
+
+                build_summary.add_command('pip-install', pip_cmd,
+                                          [], exit_code, environ,
+                                          environ['PWD'],
+                                          outfile, errfile)
+
+                if exit_code != 0:
+                    build_summary.add_exit_code(exit_code)
+                    raise CommandFailedError(pip_cmd, exit_code,
+                                             BuildSummary.FILENAME,
+                                             osp.relpath(outfile, build_root_dir),
+                                             osp.relpath(errfile, build_root_dir))
 
     
 class PythonWheelPkg(PythonPkg):

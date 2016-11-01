@@ -13,10 +13,10 @@ LANG_EXT_MAPPING = {'javascript': ['.js'],
 
 class EmptyPackageError(Exception):
 
-    def __init__(self, pkg_dir, build_summary_file):
+    def __init__(self, pkg_dir, summary_file):
         Exception.__init__(self)
         self.pkg_dir = pkg_dir
-        self.build_summary_file = build_summary_file
+        self.summary_file = summary_file
         self.exit_code = 2
 
     def __str__(self):
@@ -25,11 +25,11 @@ class EmptyPackageError(Exception):
 
 class CommandFailedError(Exception):
 
-    def __init__(self, command, exit_code, build_summary_file, outfile, errfile):
+    def __init__(self, command, exit_code, summary_file, outfile, errfile):
         Exception.__init__(self)
         self.command = ' '.join(command) if isinstance(command, list) else command
         self.exit_code = exit_code
-        self.build_summary_file = build_summary_file
+        self.summary_file = summary_file
         self.outfile = outfile
         self.errfile = errfile
 

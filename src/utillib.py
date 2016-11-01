@@ -119,48 +119,6 @@ def unpack_archive(archive, dirpath, createdir=True):
         raise ValueError('Format not supported')
 
 
-def run_cmd_old(cmd,
-                outfile=sys.stdout,
-                errfile=sys.stderr,
-                infile=None,
-                cwd='.',
-                shell=False,
-                env=None):
-    '''argument cmd should be a list'''
-    
-    def openfile(filename, mode):
-        open(filename, mode) if(isinstance(filename, str)) else filename
-
-    out = openfile(outfile, 'w')
-    err = openfile(errfile, 'w')
-    inn = openfile(infile, 'r')
-
-    if isinstance(cmd, str):
-        shell = True
-
-    environ = dict(os.environ) if env is None else env
-
-    try:
-        popen = subprocess.Popen(cmd,
-                                 stdout=out,
-                                 stderr=err,
-                                 stdin=inn,
-                                 shell=shell,
-                                 cwd=cwd,
-                                 env=environ)
-        popen.wait()
-        return (popen.returncode, environ)
-    except subprocess.CalledProcessError as err:
-        return (err.returncode, environ)
-    finally:
-        def closefile(filename, fileobj):
-            fileobj.close() if(isinstance(filename, str)) else None
-
-        closefile(outfile, out)
-        closefile(errfile, err)
-        closefile(infile, inn)
-
-
 def run_cmd(cmd,
             outfile=sys.stdout,
             errfile=sys.stderr,
@@ -212,17 +170,6 @@ def run_cmd(cmd,
         closefile(infile, inn)
         
     return (exit_code, environ)
-
-
-def os_path_join(basepath, subdir):
-    if subdir.startswith('/'):
-        return osp.normpath(osp.join(basepath, subdir[1:]))
-    else:
-        return osp.normpath(osp.join(basepath, subdir))
-
-
-def glob_glob(path, pattern):
-    return glob.glob(os_path_join(path, pattern))
 
 
 def get_cpu_type():
@@ -310,7 +257,7 @@ def rmfile(filename):
         os.remove(filename)
 
 
-# Copied from Python3.3 Standard Libary shlex.py
+# Copied from Python3.3 Standard Libary shlex.py for portability in Python3.2
 _find_unsafe = re.compile(r'[^\w@%+=:,./-]', re.ASCII).search
 
 

@@ -11,15 +11,14 @@ from .. import utillib
 from .. import confreader
 from ..logger import LogTaskStatus
 
-
 from ..utillib import UnpackArchiveError
 from ..utillib import NotADirectoryException
 
 
-# This must be an abstract class
-# class Package(ABCMeta):
 class Package:
-
+    # class Package(ABCMeta):
+    ''' TODO: This must be an abstract class '''
+    
     @classmethod
     def get_file_types(cls, pkg_lang):
         '''pkg_lang is a string'''
@@ -108,8 +107,7 @@ class Package:
     def get_src_files(self, pkg_dir, exclude_filter):
 
         fileset = set()
-        fileset.update(utillib.get_file_list(pkg_dir,
-                                             None,
+        fileset.update(utillib.get_file_list(pkg_dir, None,
                                              Package.get_file_types(self.pkg_conf['package-language'])))
         
         file_filters = utillib.get_file_filters(pkg_dir, exclude_filter.split(','))

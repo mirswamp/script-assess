@@ -80,15 +80,19 @@ class BuildSummary:
             BuildSummary._add(xml_elem, 'file',
                               osp.relpath(_file, self._build_root_dir))
 
-    def add_build_artifacts(self, fileset):
+    def add_build_artifacts(self, fileset, pkg_lang):
 
         build_artifacts_xml = BuildSummary._add(self._root, 'build-artifacts')
         web_xml = BuildSummary._add(build_artifacts_xml, 'web-src')
 
+        if isinstance(pkg_lang, str):
+            pkg_lang = pkg_lang.lower().split()
+        
         for lang, ext in LANG_EXT_MAPPING.items():
-            files = [_file for _file in fileset
-                     if osp.splitext(_file)[1] in ext]
+            if lang in pkg_lang:
+                files = [_file for _file in fileset
+                         if osp.splitext(_file)[1] in ext]
 
-            if files:
-                self._add_file_set(web_xml, lang, files)
+                if files:
+                    self._add_file_set(web_xml, lang, files)
 
