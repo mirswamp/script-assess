@@ -53,3 +53,13 @@ class CommandFailedError(Exception):
             disp_str += " for errors"
 
         return disp_str
+
+
+def get_file_extentions(pkg_lang):
+    '''pkg_lang is a string (straight from package.conf['package-language']'''
+    if isinstance(pkg_lang, str):
+        pkg_lang = pkg_lang.split()
+
+    return list({ext for lang in pkg_lang for ext in LANG_EXT_MAPPING[lang] \
+                 if lang in LANG_EXT_MAPPING})
+

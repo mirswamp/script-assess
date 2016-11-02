@@ -3,10 +3,11 @@ import os.path as osp
 import logging
 import glob
 
-from .common import PKG_ROOT_DIRNAME
+#from .common import PKG_ROOT_DIRNAME
+from . import common
 from .package import Package
 from .build_summary import BuildSummary
-from .common import CommandFailedError
+#from .common import CommandFailedError
 
 from .. import utillib
 from .. import confreader
@@ -91,10 +92,10 @@ class PythonPkg(Package):
 
                 if exit_code != 0:
                     build_summary.add_exit_code(exit_code)
-                    raise CommandFailedError(pip_cmd, exit_code,
-                                             BuildSummary.FILENAME,
-                                             osp.relpath(outfile, build_root_dir),
-                                             osp.relpath(errfile, build_root_dir))
+                    raise common.CommandFailedError(pip_cmd, exit_code,
+                                                    BuildSummary.FILENAME,
+                                                    osp.relpath(outfile, build_root_dir),
+                                                    osp.relpath(errfile, build_root_dir))
 
     def get_build_cmd(self):
         raise NotImplementedError('Cannot use this class directly')
@@ -105,7 +106,7 @@ class PythonPkg(Package):
     def build(self, build_root_dir):
 
         with BuildSummary(build_root_dir,
-                          PKG_ROOT_DIRNAME,
+                          common.PKG_ROOT_DIRNAME,
                           self.pkg_conf) as build_summary:
 
             self._configure(build_root_dir, build_summary)
@@ -178,7 +179,7 @@ class PythonWheelPkg(PythonPkg):
         
         with LogTaskStatus('package-unarchive') as lts:
             pkg_archive = osp.join(input_root_dir, self.pkg_conf['package-archive'])
-            pkg_root_dir = osp.join(build_root_dir, PKG_ROOT_DIRNAME)
+            pkg_root_dir = osp.join(build_root_dir, common.PKG_ROOT_DIRNAME)
             pkg_dir = osp.normpath(osp.join(pkg_root_dir, self.pkg_conf['package-dir']))
 
             if not osp.isdir(pkg_dir):

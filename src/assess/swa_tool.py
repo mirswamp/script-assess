@@ -11,6 +11,7 @@ from .. import confreader
 from ..logger import LogTaskStatus
 from ..utillib import UnpackArchiveError
 from ..build.common import LANG_EXT_MAPPING
+from ..build.build_summary import BuildSummary
 
 
 class ToolInstallFailedError(Exception):
@@ -207,7 +208,7 @@ class SwaTool(SwaToolBase):
 
     def _get_build_artifacts(self, build_artifacts_helper, results_root_dir):
 
-        for artifacts in build_artifacts_helper.get_build_artifacts('web-src'):
+        for artifacts in build_artifacts_helper.get_build_artifacts(BuildSummary.PKG_SRC_TAG):
             artifacts['build-artifact-id'] = artifacts['id']
             artifacts['results-root-dir'] = results_root_dir
             artifacts.update(self._tool_conf)

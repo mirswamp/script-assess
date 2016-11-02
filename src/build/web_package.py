@@ -1,12 +1,14 @@
 import os.path as osp
 import json
 
-from .common import PKG_ROOT_DIRNAME
+#from .common import PKG_ROOT_DIRNAME
+from . import common
 from .package import Package
 from .build_summary import BuildSummary
 from .common import CommandFailedError
 
 from .. import utillib
+from .. import fileutil
 from ..utillib import NotADirectoryException
 from ..logger import LogTaskStatus
 
@@ -46,14 +48,14 @@ class JsNodePkg(Package):
                 for _file in [osp.join(pkg_dir, f)
                               for f in pkg_json['files']]:
                     if osp.isdir(_file):
-                        fileset.update(utillib.get_file_list(_file, None,
-                                                             Package.get_file_types(self.pkg_conf['package-language'])))
+                        fileset.update(fileutil.get_file_list(_file, None,
+                                                              common.get_file_extentions(self.pkg_conf['package-language'])))
                     else:
                         fileset.add(_file)
             else:
-                fileset.update(utillib.get_file_list(pkg_dir,
-                                                     npm_ignore_list(),
-                                                     Package.get_file_types(self.pkg_conf['package-language'])))
+                fileset.update(fileutil.get_file_list(pkg_dir,
+                                                      npm_ignore_list(),
+                                                      common.get_file_extentions(self.pkg_conf['package-language'])))
 
         return fileset
 
@@ -63,15 +65,15 @@ class JsNodePkg(Package):
 
     def get_src_files(self, pkg_dir, exclude_filter):
 
-        file_filters = utillib.get_file_filters(pkg_dir, exclude_filter.split(','))
+        file_filters = fileutil.get_file_filters(pkg_dir, exclude_filter.split(','))
 
         fileset = set()
         if self.is_a_node_pkg(pkg_dir):
             fileset = self.get_nodejs_files(pkg_dir)
         else:
-            fileset.update(utillib.get_file_list(pkg_dir,
-                                                 None,
-                                                 Package.get_file_types(self.pkg_conf['package-language'])))
+            fileset.update(fileutil.get_file_list(pkg_dir,
+                                                  None,
+                                                  common.get_file_extentions(self.pkg_conf['package-language'])))
 
         fileset = fileset.difference(file_filters.exclude_files)
 
@@ -84,7 +86,7 @@ class JsNodePkg(Package):
     def build(self, build_root_dir):
 
         with BuildSummary(build_root_dir,
-                          PKG_ROOT_DIRNAME,
+                          common.PKG_ROOT_DIRNAME,
                           self.pkg_conf) as build_summary:
 
             self._configure(build_root_dir, build_summary)

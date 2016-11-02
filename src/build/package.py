@@ -2,12 +2,14 @@ import os
 import os.path as osp
 # from abc import ABCMeta
 
-from .common import PKG_ROOT_DIRNAME
-from .common import LANG_EXT_MAPPING
-from .common import CommandFailedError
+#from .common import PKG_ROOT_DIRNAME
+#from .common import get_file_extentions
+#from .common import CommandFailedError
+from . import common
 from .build_summary import BuildSummary
 
 from .. import utillib
+from .. import fileutil
 from .. import confreader
 from ..logger import LogTaskStatus
 
@@ -19,15 +21,6 @@ class Package:
     # class Package(ABCMeta):
     ''' TODO: This must be an abstract class '''
     
-    @classmethod
-    def get_file_types(cls, pkg_lang):
-        '''pkg_lang is a string'''
-
-        ext_list = []
-        for lang in pkg_lang.split():
-            ext_list.extend(LANG_EXT_MAPPING[lang.lower()])
-        return ext_list
-
     @classmethod
     def get_env(cls, pwd):
         new_env = dict(os.environ)
@@ -43,7 +36,7 @@ class Package:
         
         with LogTaskStatus('package-unarchive'):
             pkg_archive = osp.join(input_root_dir, self.pkg_conf['package-archive'])
-            pkg_root_dir = osp.join(build_root_dir, PKG_ROOT_DIRNAME)
+            pkg_root_dir = osp.join(build_root_dir, common.PKG_ROOT_DIRNAME)
             status = utillib.unpack_archive(pkg_archive, pkg_root_dir, True)
 
             if status != 0:
@@ -98,19 +91,19 @@ class Package:
 
                 if exit_code != 0:
                     build_summary.add_exit_code(exit_code)
-                    raise CommandFailedError(config_cmd,
-                                             exit_code,
-                                             BuildSummary.FILENAME,
-                                             osp.relpath(outfile, build_root_dir),
-                                             osp.relpath(errfile, build_root_dir))
+                    raise common.CommandFailedError(config_cmd,
+                                                    exit_code,
+                                                    BuildSummary.FILENAME,
+                                                    osp.relpath(outfile, build_root_dir),
+                                                    osp.relpath(errfile, build_root_dir))
 
     def get_src_files(self, pkg_dir, exclude_filter):
 
         fileset = set()
-        fileset.update(utillib.get_file_list(pkg_dir, None,
-                                             Package.get_file_types(self.pkg_conf['package-language'])))
+        fileset.update(fileutil.get_file_list(pkg_dir, None,
+                                              common.get_file_extentions(self.pkg_conf['package-language'])))
         
-        file_filters = utillib.get_file_filters(pkg_dir, exclude_filter.split(','))
+        file_filters = fileutil.get_file_filters(pkg_dir, exclude_filter.split(','))
         fileset = fileset.difference(file_filters.exclude_files)
         fileset = fileset.difference(_file for _file in fileset
                                      for exdir in file_filters.exclude_dirs

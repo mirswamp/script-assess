@@ -2,6 +2,7 @@ import os.path as osp
 import xml.etree.ElementTree as ET
 
 from ..build.common import LANG_EXT_MAPPING
+from ..build.build_summary import BuildSummary
 
 
 class BuildArtifactsError(Exception):
@@ -112,7 +113,7 @@ class BuildArtifactsHelper:
         count = 1
 
         for elem in self._build_artifacts:
-            if (elem.tag == 'web-src') and (elem.tag in args):
+            if (elem.tag == BuildSummary.PKG_SRC_TAG) and (elem.tag in args):
                 yield BuildArtifactsHelper.get_artifacts(count,
                                                          self._build_summary,
                                                          elem)

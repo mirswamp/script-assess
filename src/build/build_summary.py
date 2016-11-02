@@ -9,7 +9,8 @@ from .. import utillib
 class BuildSummary:
 
     FILENAME = 'build_summary.xml'
-
+    PKG_SRC_TAG = 'pkg-src'
+    
     @classmethod
     def _add(cls, parent, tag, text=None):
         elem = ET.SubElement(parent, tag)
@@ -83,7 +84,7 @@ class BuildSummary:
     def add_build_artifacts(self, fileset, pkg_lang):
 
         build_artifacts_xml = BuildSummary._add(self._root, 'build-artifacts')
-        web_xml = BuildSummary._add(build_artifacts_xml, 'web-src')
+        pkg_xml = BuildSummary._add(build_artifacts_xml, BuildSummary.PKG_SRC_TAG)
 
         if isinstance(pkg_lang, str):
             pkg_lang = pkg_lang.lower().split()
@@ -94,5 +95,5 @@ class BuildSummary:
                          if osp.splitext(_file)[1] in ext]
 
                 if files:
-                    self._add_file_set(web_xml, lang, files)
+                    self._add_file_set(pkg_xml, lang, files)
 
