@@ -62,9 +62,40 @@ class PythonPkg(Package):
         exit_code, _ = utillib.run_cmd(venv_cmd, cwd=build_root_dir, description='CREATE VENV')
         self.venv_dir = osp.join(build_root_dir, PythonPkg.VENV_BIN_DIR)
 
+    
     def _install_pkg_dependencies(self, build_root_dir, build_summary):
-        pass
-        
+
+        with LogTaskStatus('install-pkg-dependencies') as lts:
+
+            if 'package-pip-install-file' not in self.pkg_conf:
+                lts.skip_task('pip')
+            else:
+                pip_cmd = 'pip install -r {0} {1}'.format(osp.join(self.pkg_dir,
+                                                                   self.pkg_conf['package-pip-install-file']),
+                                                          self.pkg_conf.get('package-pip-install-opt', ''))
+
+                outfile = osp.join(build_root_dir, 'pip_install.out')
+                errfile = osp.join(build_root_dir, 'pip_install.err')
+
+                exit_code, environ = utillib.run_cmd(pip_cmd,
+                                                     cwd=self.pkg_dir,
+                                                     outfile=outfile,
+                                                     errfile=errfile,
+                                                     env=self._get_env(),
+                                                     description='PIP INSTALL')
+
+                build_summary.add_command('pip-install', pip_cmd,
+                                          [], exit_code, environ,
+                                          environ['PWD'],
+                                          outfile, errfile)
+
+                if exit_code != 0:
+                    build_summary.add_exit_code(exit_code)
+                    raise CommandFailedError(pip_cmd, exit_code,
+                                             BuildSummary.FILENAME,
+                                             osp.relpath(outfile, build_root_dir),
+                                             osp.relpath(errfile, build_root_dir))
+
     def get_build_cmd(self):
         raise NotImplementedError('Cannot use this class directly')
 
@@ -135,39 +166,6 @@ class PythonDistUtilsPkg(PythonPkg):
 
     def get_main_dir(self, pkg_build_dir):
         return glob.glob(osp.join(pkg_build_dir, 'build/lib*'))
-    
-    def _install_pkg_dependencies(self, build_root_dir, build_summary):
-
-        with LogTaskStatus('install-pkg-dependencies') as lts:
-
-            if 'package-pip-install-file' not in self.pkg_conf:
-                lts.skip_task('pip')
-            else:
-                pip_cmd = 'pip install -r {0} {1}'.format(osp.join(self.pkg_dir,
-                                                                   self.pkg_conf['package-pip-install-file']),
-                                                          self.pkg_conf.get('package-pip-install-opt', ''))
-
-                outfile = osp.join(build_root_dir, 'pip_install.out')
-                errfile = osp.join(build_root_dir, 'pip_install.err')
-
-                exit_code, environ = utillib.run_cmd(pip_cmd,
-                                                     cwd=self.pkg_dir,
-                                                     outfile=outfile,
-                                                     errfile=errfile,
-                                                     env=self._get_env(),
-                                                     description='PIP INSTALL')
-
-                build_summary.add_command('pip-install', pip_cmd,
-                                          [], exit_code, environ,
-                                          environ['PWD'],
-                                          outfile, errfile)
-
-                if exit_code != 0:
-                    build_summary.add_exit_code(exit_code)
-                    raise CommandFailedError(pip_cmd, exit_code,
-                                             BuildSummary.FILENAME,
-                                             osp.relpath(outfile, build_root_dir),
-                                             osp.relpath(errfile, build_root_dir))
 
     
 class PythonWheelPkg(PythonPkg):

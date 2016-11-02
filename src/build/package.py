@@ -56,7 +56,7 @@ class Package:
                                        "Directory '{0}' not found".format(osp.basename(pkg_dir)))
                 raise NotADirectoryException()
 
-            self.pkg_dir = pkg_dir
+            self.pkg_dir = osp.normpath(pkg_dir)
 
     def _configure(self, build_root_dir, build_summary):
 
