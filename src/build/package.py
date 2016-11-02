@@ -2,9 +2,6 @@ import os
 import os.path as osp
 # from abc import ABCMeta
 
-#from .common import PKG_ROOT_DIRNAME
-#from .common import get_file_extentions
-#from .common import CommandFailedError
 from . import common
 from .build_summary import BuildSummary
 
@@ -33,24 +30,28 @@ class Package:
         self.pkg_conf = confreader.read_conf_into_dict(pkg_conf_file)
         self.pkg_conf['package-language'] = self.pkg_conf['package-language'].lower()
         self.input_root_dir = input_root_dir
-        
+
+        self._unarchive(build_root_dir)
+
+        pkg_root_dir = osp.join(build_root_dir, common.PKG_ROOT_DIRNAME)
+        pkg_dir = osp.join(pkg_root_dir, self.pkg_conf['package-dir'])
+
+        if not osp.isdir(pkg_dir):
+            LogTaskStatus.log_task('chdir-package-dir', 1, None,
+                                   "Directory '{0}' not found".format(osp.basename(pkg_dir)))
+            raise NotADirectoryException()
+
+        self.pkg_dir = osp.normpath(pkg_dir)
+
+    def _unarchive(self, build_root_dir):
+
         with LogTaskStatus('package-unarchive'):
-            pkg_archive = osp.join(input_root_dir, self.pkg_conf['package-archive'])
+            pkg_archive = osp.join(self.input_root_dir, self.pkg_conf['package-archive'])
             pkg_root_dir = osp.join(build_root_dir, common.PKG_ROOT_DIRNAME)
-            status = utillib.unpack_archive(pkg_archive, pkg_root_dir, True)
 
-            if status != 0:
+            if utillib.unpack_archive(pkg_archive, pkg_root_dir, True) != 0:
                 raise UnpackArchiveError(osp.basename(pkg_archive))
-
-            pkg_dir = osp.join(pkg_root_dir, self.pkg_conf['package-dir'])
-
-            if not osp.isdir(pkg_dir):
-                LogTaskStatus.log_task('chdir-package-dir', 1, None,
-                                       "Directory '{0}' not found".format(osp.basename(pkg_dir)))
-                raise NotADirectoryException()
-
-            self.pkg_dir = osp.normpath(pkg_dir)
-
+        
     def _configure(self, build_root_dir, build_summary):
 
         with LogTaskStatus('configure') as status_dot_out:
@@ -97,6 +98,7 @@ class Package:
                                                     osp.relpath(outfile, build_root_dir),
                                                     osp.relpath(errfile, build_root_dir))
 
+    
     def get_src_files(self, pkg_dir, exclude_filter):
 
         fileset = set()

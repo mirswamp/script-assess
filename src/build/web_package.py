@@ -1,7 +1,6 @@
 import os.path as osp
 import json
 
-#from .common import PKG_ROOT_DIRNAME
 from . import common
 from .package import Package
 from .build_summary import BuildSummary

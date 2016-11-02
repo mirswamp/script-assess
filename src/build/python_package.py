@@ -62,14 +62,13 @@ class PythonPkg(Package):
 
         exit_code, _ = utillib.run_cmd(venv_cmd, cwd=build_root_dir, description='CREATE VENV')
         self.venv_dir = osp.join(build_root_dir, PythonPkg.VENV_BIN_DIR)
-
     
     def _install_pkg_dependencies(self, build_root_dir, build_summary):
 
-        with LogTaskStatus('install-pkg-dependencies') as lts:
+        with LogTaskStatus('install-pkg-dependencies', msg_inline='pip') as lts:
 
             if 'package-pip-install-file' not in self.pkg_conf:
-                lts.skip_task('pip')
+                lts.skip_task()
             else:
                 pip_cmd = 'pip install -r {0} {1}'.format(osp.join(self.pkg_dir,
                                                                    self.pkg_conf['package-pip-install-file']),
@@ -102,7 +101,51 @@ class PythonPkg(Package):
 
     def get_main_dir(self, pkg_build_dir):
         yield pkg_build_dir
-        
+
+    def _build(self, build_root_dir, build_summary):
+        with LogTaskStatus('build'):
+
+            pkg_build_dir = osp.normpath(osp.join(self.pkg_dir,
+                                                  self.pkg_conf.get('build-dir', '.')))
+
+            if not osp.isdir(pkg_build_dir):
+                LogTaskStatus.log_task('chdir-build-dir', 1, None,
+                                       "Directory '{0}' not found".format(osp.basename(pkg_build_dir)))
+                raise NotADirectoryException()
+
+            build_cmd = self.get_build_cmd()
+            outfile = osp.join(build_root_dir, 'build_stdout.out')
+            errfile = osp.join(build_root_dir, 'build_stderr.err')
+
+            exit_code, environ = utillib.run_cmd(build_cmd,
+                                                 cwd=pkg_build_dir,
+                                                 outfile=outfile,
+                                                 errfile=errfile,
+                                                 env=self._get_env(),
+                                                 description='BUILD')
+
+            build_summary.add_command('build', build_cmd,
+                                      [], exit_code, environ,
+                                      environ['PWD'],
+                                      outfile, errfile)
+
+            build_summary.add_exit_code(exit_code)
+
+            if exit_code != 0:
+                raise common.CommandFailedError(build_cmd, exit_code,
+                                                BuildSummary.FILENAME,
+                                                osp.relpath(outfile, build_root_dir),
+                                                osp.relpath(errfile, build_root_dir))
+
+            fileset = set()
+            for dir_path in self.get_main_dir(pkg_build_dir):
+                fileset.update(self.get_src_files(dir_path,
+                                                  self.pkg_conf.get('package-exclude-paths',
+                                                                    '')))
+
+            build_summary.add_build_artifacts(fileset, self.pkg_conf['package-language'])
+            return (exit_code, BuildSummary.FILENAME)
+
     def build(self, build_root_dir):
 
         with BuildSummary(build_root_dir,
@@ -111,49 +154,7 @@ class PythonPkg(Package):
 
             self._configure(build_root_dir, build_summary)
             self._install_pkg_dependencies(build_root_dir, build_summary)
-            
-            with LogTaskStatus('build'):
-
-                pkg_build_dir = osp.normpath(osp.join(self.pkg_dir,
-                                                      self.pkg_conf.get('build-dir', '.')))
-
-                if not osp.isdir(pkg_build_dir):
-                    LogTaskStatus.log_task('chdir-build-dir', 1, None,
-                                           "Directory '{0}' not found".format(osp.basename(pkg_build_dir)))
-                    raise NotADirectoryException()
-
-                build_cmd = self.get_build_cmd()
-                outfile = osp.join(build_root_dir, 'build_stdout.out')
-                errfile = osp.join(build_root_dir, 'build_stderr.err')
-
-                exit_code, environ = utillib.run_cmd(build_cmd,
-                                                     cwd=pkg_build_dir,
-                                                     outfile=outfile,
-                                                     errfile=errfile,
-                                                     env=self._get_env(),
-                                                     description='BUILD')
-                
-                build_summary.add_command('build', build_cmd,
-                                          [], exit_code, environ,
-                                          environ['PWD'],
-                                          outfile, errfile)
-
-                build_summary.add_exit_code(exit_code)
-
-                if exit_code != 0:
-                    raise CommandFailedError(build_cmd, exit_code,
-                                             BuildSummary.FILENAME,
-                                             osp.relpath(outfile, build_root_dir),
-                                             osp.relpath(errfile, build_root_dir))
-                
-                fileset = set()
-                for dir_path in self.get_main_dir(pkg_build_dir):
-                    fileset.update(self.get_src_files(dir_path,
-                                                      self.pkg_conf.get('package-exclude-paths',
-                                                                        '')))
-
-                build_summary.add_build_artifacts(fileset, self.pkg_conf['package-language'])
-                return (exit_code, BuildSummary.FILENAME)
+            return self._build(build_root_dir, build_summary)
 
 
 class PythonDistUtilsPkg(PythonPkg):
@@ -178,7 +179,7 @@ class PythonWheelPkg(PythonPkg):
         self.input_root_dir = input_root_dir
         
         with LogTaskStatus('package-unarchive') as lts:
-            pkg_archive = osp.join(input_root_dir, self.pkg_conf['package-archive'])
+            # pkg_archive = osp.join(input_root_dir, self.pkg_conf['package-archive'])
             pkg_root_dir = osp.join(build_root_dir, common.PKG_ROOT_DIRNAME)
             pkg_dir = osp.normpath(osp.join(pkg_root_dir, self.pkg_conf['package-dir']))
 
