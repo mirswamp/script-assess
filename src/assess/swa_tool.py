@@ -188,7 +188,7 @@ class SwaTool(SwaToolBase):
         if split_required:
             tool_target_artifacts = SwaTool._tool_target_artifacts(tool_invoke_file)
             package_artifacts = {k: v for k, v in artifacts.items()
-                                   if k in tool_target_artifacts and artifacts[k]}
+                                 if k in tool_target_artifacts and artifacts[k]}
             # Remove tool_target_artifacts from the dictionary, split and add them later
             [None for m in map(artifacts.pop, package_artifacts.keys())]
 

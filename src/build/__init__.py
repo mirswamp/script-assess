@@ -4,8 +4,11 @@ import shutil
 import logging
 
 from .web_package import JsNodePkg
+from .web_package import ComposerPkg
+from .web_package import PearPkg
 from .python_package import PythonDistUtilsPkg
 from .python_package import PythonWheelPkg
+from .python_package import PythonNoBuildPkg
 from .python_package import PythonOtherPkg
 from .common import EmptyPackageError
 from .common import CommandFailedError
@@ -24,14 +27,14 @@ def get_pkg_obj(pkg_conf_file, input_root_dir, build_root_dir):
 
     web_pkg_types = {
         'npm': JsNodePkg,
-        'composer': JsNodePkg,
-        'pear': JsNodePkg,
-        'no-build': JsNodePkg,
+        'composer': ComposerPkg,
+        'pear': PearPkg,
+        'no-build': PythonNoBuildPkg,
         'python-distutils': PythonDistUtilsPkg,
         'python-setuptools': PythonDistUtilsPkg,
         'wheels': PythonWheelPkg,
         'other': PythonOtherPkg,
-        'none': PythonOtherPkg
+        'none': PythonNoBuildPkg
     }
 
     build_sys = pkg_conf['build-sys']

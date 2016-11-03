@@ -17,13 +17,6 @@ from ..utillib import NotADirectoryException
 class Package:
     # class Package(ABCMeta):
     ''' TODO: This must be an abstract class '''
-    
-    @classmethod
-    def get_env(cls, pwd):
-        new_env = dict(os.environ)
-        if 'PWD' in new_env:
-            new_env['PWD'] = pwd
-        return new_env
 
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
 
@@ -38,11 +31,17 @@ class Package:
 
         if not osp.isdir(pkg_dir):
             LogTaskStatus.log_task('chdir-package-dir', 1, None,
-                                   "Directory '{0}' not found".format(osp.basename(pkg_dir)))
+                                   "Directory '{0}' not found".format(osp.relpath(pkg_dir, pkg_root_dir)))
             raise NotADirectoryException()
 
         self.pkg_dir = osp.normpath(pkg_dir)
-
+    
+    def _get_env(self, pwd):
+        new_env = dict(os.environ)
+        if 'PWD' in new_env:
+            new_env['PWD'] = pwd
+        return new_env
+    
     def _unarchive(self, build_root_dir):
 
         with LogTaskStatus('package-unarchive'):
@@ -65,20 +64,21 @@ class Package:
 
                 if not osp.isdir(config_dir):
                     LogTaskStatus.log_task('chdir-config-dir', 1, None,
-                                           "Directory '{0}' not found".format(osp.basename(config_dir)))
+                                           "Directory '{0}' not found".format(osp.relpath(config_dir,
+                                                                                          self.pkg_dir)))
                     raise NotADirectoryException()
 
                 config_cmd = '%s %s' % (self.pkg_conf['config-cmd'],
                                         self.pkg_conf.get('config-opt', ''))
 
-                outfile = osp.join(build_root_dir, 'config_stdout.out')
-                errfile = osp.join(build_root_dir, 'config_stderr.out')
+                outfile = osp.join(build_root_dir, 'config.out')
+                errfile = osp.join(build_root_dir, 'config.out')
 
                 exit_code, environ = utillib.run_cmd(config_cmd,
                                                      outfile,
                                                      errfile,
                                                      cwd=config_dir,
-                                                     env=Package.get_env(config_dir),
+                                                     env=self._get_env(config_dir),
                                                      description="CONFIGURE")
 
                 build_summary.add_command('configure',
@@ -98,7 +98,58 @@ class Package:
                                                     osp.relpath(outfile, build_root_dir),
                                                     osp.relpath(errfile, build_root_dir))
 
-    
+    def get_build_cmd(self):
+        raise NotImplementedError('Cannot use this class directly')
+
+    def get_main_dir(self, pkg_build_dir):
+        yield pkg_build_dir
+
+    def _build(self, build_root_dir, build_summary):
+
+        with LogTaskStatus('build'):
+
+            pkg_build_dir = osp.normpath(osp.join(self.pkg_dir,
+                                                  self.pkg_conf.get('build-dir', '.')))
+
+            if not osp.isdir(pkg_build_dir):
+                LogTaskStatus.log_task('chdir-build-dir', 1, None,
+                                       "Directory '{0}' not found".format(osp.relpath(pkg_build_dir,
+                                                                                      self.pkg_dir)))
+                raise NotADirectoryException()
+
+            build_cmd = self.get_build_cmd()
+            outfile = osp.join(build_root_dir, 'build.out')
+            errfile = osp.join(build_root_dir, 'build.err')
+
+            exit_code, environ = utillib.run_cmd(build_cmd,
+                                                 cwd=pkg_build_dir,
+                                                 outfile=outfile,
+                                                 errfile=errfile,
+                                                 env=self._get_env(pkg_build_dir),
+                                                 description='BUILD')
+
+            build_summary.add_command('build', build_cmd,
+                                      [], exit_code, environ,
+                                      environ['PWD'],
+                                      outfile, errfile)
+
+            build_summary.add_exit_code(exit_code)
+
+            if exit_code != 0:
+                raise common.CommandFailedError(build_cmd, exit_code,
+                                                BuildSummary.FILENAME,
+                                                osp.relpath(outfile, build_root_dir),
+                                                osp.relpath(errfile, build_root_dir))
+
+            fileset = set()
+            for dir_path in self.get_main_dir(pkg_build_dir):
+                fileset.update(self.get_src_files(dir_path,
+                                                  self.pkg_conf.get('package-exclude-paths',
+                                                                    '')))
+
+            build_summary.add_build_artifacts(fileset, self.pkg_conf['package-language'])
+            return (exit_code, BuildSummary.FILENAME)
+                
     def get_src_files(self, pkg_dir, exclude_filter):
 
         fileset = set()
@@ -113,4 +164,11 @@ class Package:
         return fileset
     
     def build(self, build_root_dir):
-        raise NotImplementedError('Cannot use this class directly')
+
+        with BuildSummary(build_root_dir,
+                          common.PKG_ROOT_DIRNAME,
+                          self.pkg_conf) as build_summary:
+
+            self._configure(build_root_dir, build_summary)
+            return self._build(build_root_dir, build_summary)
+
