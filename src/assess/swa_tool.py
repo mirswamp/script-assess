@@ -118,16 +118,16 @@ class SwaTool(SwaToolBase):
     FILE_TYPE = 'srcfile'
 
     @classmethod
-    def _tool_target_artifacts(cls, invoke_file):
+    def _get_tool_target_artifacts(cls, invoke_file):
         ''' Each tool works on certain types of files such as html, css, javascript.
         This method takes the invoke_file for the tool and return that target 
         artifacts the tools works on'''
 
         # Get all supported langagues by the framework
-        all_lang = set(LANG_EXT_MAPPING.keys())
-        all_lang.add(SwaTool.FILE_TYPE)  # to add 'srcfile'
-        tokens = gencmd.get_param_list(invoke_file)
-        return list(set(tokens).intersection(all_lang))
+        all_supported_lang = set(LANG_EXT_MAPPING.keys())
+        all_supported_lang.add(SwaTool.FILE_TYPE)  # to add 'srcfile'
+        return [var for var in gencmd.get_cmd_var_list(invoke_file)
+                if var.name in all_supported_lang]
 
     @classmethod
     def _has_no_artifacts(cls, invoke_file, artifacts):
@@ -135,8 +135,8 @@ class SwaTool(SwaToolBase):
         This method takes the invoke_file for the tool and checks if artifacts
         required by the tool are present in the package
         '''
-        return not any(True if file_type in artifacts and artifacts[file_type] else False
-                       for file_type in cls._tool_target_artifacts(invoke_file))
+        return not any(True if var.name in artifacts and artifacts[var.name] else False
+                       for var in cls._get_tool_target_artifacts(invoke_file))
 
     def __init__(self, input_root_dir, tool_root_dir):
         SwaToolBase.__init__(self, input_root_dir, tool_root_dir)
@@ -147,27 +147,35 @@ class SwaTool(SwaToolBase):
         tool_invoke_file = osp.join(self.input_root_dir,
                                     artifacts['tool-invoke'])
 
-        package_artifacts = {k: v for k, v in artifacts.items()
-                             if k in SwaTool._tool_target_artifacts(tool_invoke_file)
-                             and artifacts[k]}
-            
+        # The langagues that tool works on
+        tool_target_artifacts = SwaTool._get_tool_target_artifacts(tool_invoke_file)
+
+        # The langague files that are present in the package
+        # package_artifacts = {k: v for k, v in artifacts.items()
+        #                      if k in tool_target_artifacts
+        #                      and k in artifacts
+        #                      and artifacts[k.name]}
+
+        package_artifacts = {var.name: artifacts[var.name] for var in tool_target_artifacts
+                             if var.name in artifacts}
+
         (split_required,
-         max_allowed_size) = fileutil.is_chunking_commands_required(tool_invoke_file,
-                                                                    artifacts,
-                                                                    package_artifacts.keys())
-        # (split_required,
-        #  max_allowed_size) = SwaTool._split_artifacts_required(tool_invoke_file,
-        #                                                        artifacts)
+         max_cmd_size) = fileutil.is_chunking_commands_required(tool_invoke_file,
+                                                                artifacts,
+                                                                package_artifacts.keys())
 
         if split_required:
 
-            # Remove tool_target_artifacts from the dictionary, split and add them later
+            # Remove tool_target_artifacts from the dictionary, chunk and add them later
             [None for _ in map(artifacts.pop, package_artifacts.keys())]
 
+            tool_target_artifacts_dict = {var.name: var.sep for var in tool_target_artifacts}
+            
             id_count = 1
             for file_type in package_artifacts.keys():
                 for filelist in fileutil.chunk_file_list(package_artifacts[file_type],
-                                                         max_allowed_size):
+                                                         max_cmd_size,
+                                                         tool_target_artifacts_dict.get(file_type, ' ')):
 
                     new_artifacts = dict(artifacts)
                     new_artifacts[file_type] = filelist
