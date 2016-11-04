@@ -182,11 +182,11 @@ def is_chunking_commands_required(invoke_file,
         return (False, -1)
 
 
-def split_file_list(file_list, max_size, sep=' '):
+def split_file_list_old(file_list, max_size, sep=' '):
     '''
-    Split file_list 
+    Split file_list
     '''
-    
+
     def split(llist, file_list, max_size):
         if len(sep.join(file_list)) > max_size:
             split(llist, file_list[0:int(len(file_list) / 2)], max_size)
@@ -198,3 +198,25 @@ def split_file_list(file_list, max_size, sep=' '):
     split(list_of_lists, file_list, max_size)
     return list_of_lists
 
+
+def split_file_list(file_list, max_size, sep=' '):
+    '''
+    Split file_list
+    '''
+
+    sub_list = list()
+    list_size = 0
+    len_sep = len(sep)
+
+    for _file in file_list:
+        if (list_size + len_sep + len(_file) < max_size):
+            sub_list.append(_file)
+            list_size = list_size + len_sep + len(_file)
+        else:
+            yield sub_list
+            sub_list.clear()
+            sub_list.append(_file)
+            list_size = len(_file)
+
+    if len(sub_list):
+        yield sub_list
