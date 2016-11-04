@@ -3,13 +3,8 @@ import json
 
 from . import common
 from .package import Package
-from .build_summary import BuildSummary
-from .common import CommandFailedError
 
-from .. import utillib
 from .. import fileutil
-from ..utillib import NotADirectoryException
-from ..logger import LogTaskStatus
 
 
 class JsNodePkg(Package):
@@ -95,4 +90,3 @@ class PearPkg(Package):
 
     def get_build_cmd(self):
         return 'pear config-set php_dir ${BUILD_DIR}/user_lib && pear install --alldeps --register-only ${VMINPUTDIR}/%s' % self.pkg_conf['package-archive']
-

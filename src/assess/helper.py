@@ -122,4 +122,3 @@ class BuildArtifactsHelper:
                 raise NotImplementedError
 
             count += 1
-

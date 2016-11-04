@@ -47,11 +47,11 @@ class Lizard(SwaTool):
 
             artifacts[SwaTool.FILE_TYPE] = [_file for _file in artifacts[SwaTool.FILE_TYPE]
                                             if osp.splitext(_file)[1] not in ['.css' '.xml']]
-            
+
             for new_artifacts in self._split_build_artifacts(artifacts):
                 yield new_artifacts
-        
-        
+
+
 class Flow(SwaToolBase):
 
     def __init__(self, input_root_dir, tool_root_dir):
@@ -171,7 +171,7 @@ class Retire(SwaToolBase):
 
     def __init__(self, input_root_dir, tool_root_dir):
         SwaToolBase.__init__(self, input_root_dir, tool_root_dir)
-        
+
     def assess(self, build_summary_file, results_root_dir):
 
         if not osp.isdir(results_root_dir):
@@ -209,7 +209,7 @@ class Retire(SwaToolBase):
 
             if not osp.isfile(osp.join(assessment_working_dir, 'package.json')):
                 artifacts['not-node-pkg'] = '--js'
-            
+
             assess_cmd = gencmd.gencmd(osp.join(self.input_root_dir,
                                                 artifacts['tool-invoke']),
                                        artifacts)
@@ -242,4 +242,3 @@ class Retire(SwaToolBase):
                 failed += 1
 
         return (passed, failed, assessment_summary_file)
-

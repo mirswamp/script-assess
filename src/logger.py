@@ -29,7 +29,7 @@ class LogTaskStatus():
       ...
       ----------
     '''
-    
+
     def __init__(self, task, exit_code=0, msg_inline=None, msg_indetail=None):
 
         self.task = str(task)
@@ -41,11 +41,13 @@ class LogTaskStatus():
                                                 initial_indent='  ',
                                                 subsequent_indent='  ',
                                                 break_on_hyphens=False)
-
+        self.start_time = None
+        self.end_time = None
+        
     def __enter__(self):
         self.start_time = time.time()
         return self
-    
+
     @classmethod
     def status_begin(cls):
         logging.getLogger('.status-logger').log(60, 'NOTE: begin')
@@ -61,7 +63,7 @@ class LogTaskStatus():
                                         msg_inline,
                                         msg_indetail)
         log_task_status.write_notime()
-        
+
     @classmethod
     def get_status_str_cls(cls,
                            taskname,
@@ -104,8 +106,7 @@ class LogTaskStatus():
         else:
             return '{0}: {1:{text_width}}'.format(status_str,
                                                   task_str,
-                                                  text_width=59,
-                                                  time_width=13)
+                                                  text_width=59)
 
     def get_formatted_msg(self, msg_indetail):
         '''  ----------
@@ -144,7 +145,7 @@ class LogTaskStatus():
 
         if retry:
             logging.getLogger('.status-logger').log(60, 'NOTE: retry')
-    
+
     def write_notime(self):
         logging.getLogger('.status-logger').log(60, self.get_status_str(False))
 
@@ -197,4 +198,3 @@ def init(output_dir=os.getcwd()):
 def shutdown():
     LogTaskStatus.status_end()
     logging.shutdown()
-

@@ -140,7 +140,7 @@ def p_param(p):
     p[0] = ('parameter', name, seperator)
 
 
-def p_empty(p):
+def p_empty(_):
     '''empty : '''
     pass
 

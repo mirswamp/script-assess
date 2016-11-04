@@ -87,17 +87,17 @@ class SwaToolBase:
 
                 install_cmd = self._tool_conf['tool-install-cmd']
 
-                exit_code, environ = utillib.run_cmd(install_cmd,
-                                                     cwd=osp.join(tool_root_dir,
-                                                                  self._tool_conf['tool-dir']),
-                                                     env=self._get_env(),
-                                                     description='TOOL INSTALL')
+                exit_code, _ = utillib.run_cmd(install_cmd,
+                                               cwd=osp.join(tool_root_dir,
+                                                            self._tool_conf['tool-dir']),
+                                               env=self._get_env(),
+                                               description='TOOL INSTALL')
 
                 if exit_code != 0:
                     raise ToolInstallFailedError("Install Tool Failed, "
                                                  "Command '{0}' return {1}".format(install_cmd,
                                                                                    exit_code))
-                               
+
     def _validate_exit_code(self, exit_code):
         if 'valid-exit-status' in self._tool_conf:
             valid_exit_codes = [int(ec.strip())
@@ -167,10 +167,11 @@ class SwaTool(SwaToolBase):
         if split_required:
 
             # Remove tool_target_artifacts from the dictionary, chunk and add them later
-            [None for _ in map(artifacts.pop, package_artifacts.keys())]
+            for key in package_artifacts.keys():
+                artifacts.pop(key)
 
             tool_target_artifacts_dict = {var.name: var.sep for var in tool_target_artifacts}
-            
+
             id_count = 1
             for file_type in package_artifacts.keys():
                 for filelist in fileutil.chunk_file_list(package_artifacts[file_type],
@@ -279,4 +280,3 @@ class SwaTool(SwaToolBase):
                     logging.info('ASSESSMENT SKIP (NO SOURCE FILES FOUND)')
 
             return (passed, failed, assessment_summary_file)
-

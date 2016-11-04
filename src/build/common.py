@@ -62,4 +62,3 @@ def get_file_extentions(pkg_lang):
 
     return list({ext for lang in pkg_lang for ext in LANG_EXT_MAPPING[lang] \
                  if lang in LANG_EXT_MAPPING})
-

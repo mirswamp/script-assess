@@ -32,8 +32,8 @@ def install(input_dir):
             if this_platform_deps in os_deps:
                 if os_deps[this_platform_deps]:
                     pkg_installer = os.getenv('VMOSPACKAGEINSTALL')
-                    exit_code, environ = utillib.run_cmd([pkg_installer, os_deps_file],
-                                                         description='OS DEPENDENCIES INSTALLATION')
+                    exit_code, _ = utillib.run_cmd([pkg_installer, os_deps_file],
+                                                   description='OS DEPENDENCIES INSTALLATION')
                     status_dot_out.update_task_status(exit_code)
 
                     if exit_code != 0:

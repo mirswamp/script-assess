@@ -10,7 +10,7 @@ class BuildSummary:
 
     FILENAME = 'build_summary.xml'
     PKG_SRC_TAG = 'pkg-src'
-    
+
     @classmethod
     def _add(cls, parent, tag, text=None):
         elem = ET.SubElement(parent, tag)
@@ -88,7 +88,7 @@ class BuildSummary:
 
         if isinstance(pkg_lang, str):
             pkg_lang = pkg_lang.lower().split()
-        
+
         for lang, ext in LANG_EXT_MAPPING.items():
             if lang in pkg_lang:
                 files = [_file for _file in fileset
@@ -96,4 +96,3 @@ class BuildSummary:
 
                 if files:
                     self._add_file_set(pkg_xml, lang, files)
-

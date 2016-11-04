@@ -24,16 +24,16 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
     tool_conf_file = osp.join(input_root_dir, SwaToolBase.TOOL_DOT_CONF)
     tool_conf = confreader.read_conf_into_dict(tool_conf_file)
     tool_type = tool_conf['tool-type'].lower()
-    
-    if tool_type == 'flow':
+
+    if tool_type is 'flow':
         swa_tool = Flow(input_root_dir, tool_root_dir)
-    elif tool_type == 'retire-js':
+    elif tool_type is 'retire-js':
         swa_tool = Retire(input_root_dir, tool_root_dir)
     elif tool_type in ['php_codesniffer', 'phpmd']:
         swa_tool = PhpTool(input_root_dir, tool_root_dir)
-    elif tool_type == 'cloc':
+    elif tool_type is 'cloc':
         swa_tool = SwaTool(input_root_dir, tool_root_dir)
-    elif tool_type == 'lizard':
+    elif tool_type is 'lizard':
         swa_tool = Lizard(input_root_dir, tool_root_dir)
     elif tool_type in ['pylint', 'bandit', 'flake8']:
         swa_tool = PythonTool(input_root_dir, build_summary_file, tool_root_dir)

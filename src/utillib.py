@@ -126,7 +126,7 @@ def run_cmd(cmd,
             env=None,
             description='UNKNOWN'):
     '''argument cmd should be a list'''
-    
+
     def openfile(filename, mode):
         return open(filename, mode) if(isinstance(filename, str)) else filename
 
@@ -143,7 +143,7 @@ def run_cmd(cmd,
 
     environ = dict(os.environ) if env is None else env
     environ['PWD'] = osp.abspath(cwd)
-    
+
     try:
         logging.info('%s COMMAND %s', description, cmd)
         logging.info('%s WORKING DIR %s', description, environ['PWD'])
@@ -166,7 +166,7 @@ def run_cmd(cmd,
         closefile(outfile, out)
         closefile(errfile, err)
         closefile(infile, inn)
-        
+
     return (exit_code, environ)
 
 
@@ -191,11 +191,6 @@ def max_cmd_size():
     return arg_max
 
 
-def max_cmd_size_new():
-    cmd = 'expr `getconf ARG_MAX` - `env|wc -c` - `env|wc -l` \* 4 - 2048'
-    return int(subprocess.check_output(cmd, shell=True).decode(encoding='utf-8').strip())
-
-
 def platform():
     platname = os.uname()
     return platname[3] if(isinstance(platname, tuple)) else platname.version
@@ -215,7 +210,7 @@ def write_to_file(filename, obj):
                 print(entity, file=fobj)
 
 
-#PARAM_REGEX = re.compile(r'<(?P<name>[a-zA-Z][a-zA-Z_-]*)(?:[%](?P<sep>[^>]+))?>')
+# PARAM_REGEX = re.compile(r'<(?P<name>[a-zA-Z][a-zA-Z_-]*)(?:[%](?P<sep>[^>]+))?>')
 PARAM_REGEX = re.compile(r'<(?P<name>[a-zA-Z][a-zA-Z0-9]*(?:[_-]?[a-zA-Z0-9]+)*)(?:[%](?P<sep>[^>]+))?>')
 
 
@@ -294,4 +289,3 @@ def ordered_list(_list):
             new_list.append(item)
 
     return new_list
-

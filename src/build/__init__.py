@@ -25,7 +25,7 @@ def get_pkg_obj(pkg_conf_file, input_root_dir, build_root_dir):
 
     pkg_conf = confreader.read_conf_into_dict(pkg_conf_file)
 
-    web_pkg_types = {
+    pkg_types = {
         'npm': JsNodePkg,
         'composer': ComposerPkg,
         'pear': PearPkg,
@@ -39,8 +39,8 @@ def get_pkg_obj(pkg_conf_file, input_root_dir, build_root_dir):
 
     build_sys = pkg_conf['build-sys']
 
-    if build_sys in web_pkg_types.keys():
-        return web_pkg_types[build_sys](pkg_conf_file, input_root_dir, build_root_dir)
+    if build_sys in pkg_types.keys():
+        return pkg_types[build_sys](pkg_conf_file, input_root_dir, build_root_dir)
     else:
         raise NotImplementedError("Unknown build system '{0}'".format(build_sys))
 

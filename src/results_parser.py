@@ -99,9 +99,9 @@ def parse_results(input_dir, assessment_summary_file, results_dir, output_dir):
                                               WEAKNESS_COUNT_FILENAME=parse_weakness_count_file,
                                               LOGFILE=parse_results_logfile)
 
-            exit_code, environ = utillib.run_cmd(command,
-                                                 cwd=osp.dirname(parser_exe_file),
-                                                 description='PARSE RESULTS')
+            exit_code, _ = utillib.run_cmd(command,
+                                           cwd=osp.dirname(parser_exe_file),
+                                           description='PARSE RESULTS')
 
             if exit_code == 0:
                 weakness_count = ''

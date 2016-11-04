@@ -6,6 +6,7 @@ from collections import namedtuple
 from . import utillib
 from . import gencmd
 
+
 FileFilters = namedtuple('FileFilters', ['exclude_dirs', 'exclude_files',
                                          'include_dirs', 'include_files'])
 
@@ -38,7 +39,7 @@ def expand_patterns(root_dir, pattern_list):
 def get_file_filters(root_dir, patterns):
     '''Returns an FileFilters object'''
 
-    '''patterns is expected to be a list or filepath'''
+    # patterns is expected to be a list or filepath
     if isinstance(patterns, str):
         with open(patterns) as fobj:
             patterns = [p for p in fobj]
@@ -127,7 +128,7 @@ def get_file_list(root_dir, patterns, file_extentions):
     '''
     In the root_dir path, applies patterns and returns the list of files matching the extensions in file_extentions
     '''
-    
+
     file_filters = get_file_filters(root_dir, patterns)
 
     file_list = list()
@@ -141,7 +142,7 @@ def filter_file_list(file_list, root_dir, patterns):
     ''' 
     Given a set of files (file_list), excludes the files matching the patterns and returns a new file list
     '''
-    
+
     file_filters = get_file_filters(root_dir, patterns)
 
     new_file_list = set(file_list).difference(file_filters.exclude_files)
@@ -160,7 +161,7 @@ def filter_file_list(file_list, root_dir, patterns):
 
 def is_chunking_commands_required(invoke_file,
                                   artifacts_dict,
-                                  target_params):
+                                  keys):
     '''returns a tuple with key in attribute and an integer corresponding
     to the size '''
 
@@ -172,10 +173,8 @@ def is_chunking_commands_required(invoke_file,
     if get_cmd_size(artifacts_local) > utillib.max_cmd_size():
 
         # Remove all the artifacts that the tool works on, and then check the size
-        # [artifacts_local.pop(k) for k in target_params
-        # if k in artifacts_local and artifacts_local[k]]
-        # Remove tool_target_artifacts from the dictionary, split and add them later
-        [None for _ in map(artifacts_local.pop, target_params)]
+        for key in keys:
+            artifacts_local.pop(key)
 
         return (True, utillib.max_cmd_size() - get_cmd_size(artifacts_local))
     else:

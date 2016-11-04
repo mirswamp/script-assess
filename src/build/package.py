@@ -1,6 +1,6 @@
 import os
 import os.path as osp
-# from abc import ABCMeta
+from abc import ABCMeta
 
 from . import common
 from .build_summary import BuildSummary
@@ -14,8 +14,8 @@ from ..utillib import UnpackArchiveError
 from ..utillib import NotADirectoryException
 
 
-class Package:
-    # class Package(ABCMeta):
+#class Package:
+class Package(metaclass=ABCMeta):
     ''' TODO: This must be an abstract class '''
 
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
@@ -35,13 +35,13 @@ class Package:
             raise NotADirectoryException()
 
         self.pkg_dir = osp.normpath(pkg_dir)
-    
+
     def _get_env(self, pwd):
         new_env = dict(os.environ)
         if 'PWD' in new_env:
             new_env['PWD'] = pwd
         return new_env
-    
+
     def _unarchive(self, build_root_dir):
 
         with LogTaskStatus('package-unarchive'):
@@ -50,7 +50,7 @@ class Package:
 
             if utillib.unpack_archive(pkg_archive, pkg_root_dir, True) != 0:
                 raise UnpackArchiveError(osp.basename(pkg_archive))
-        
+
     def _configure(self, build_root_dir, build_summary):
 
         with LogTaskStatus('configure') as status_dot_out:
@@ -149,20 +149,20 @@ class Package:
 
             build_summary.add_build_artifacts(fileset, self.pkg_conf['package-language'])
             return (exit_code, BuildSummary.FILENAME)
-                
+
     def get_src_files(self, pkg_dir, exclude_filter):
 
         fileset = set()
         fileset.update(fileutil.get_file_list(pkg_dir, None,
                                               common.get_file_extentions(self.pkg_conf['package-language'])))
-        
+
         file_filters = fileutil.get_file_filters(pkg_dir, exclude_filter.split(','))
         fileset = fileset.difference(file_filters.exclude_files)
         fileset = fileset.difference(_file for _file in fileset
                                      for exdir in file_filters.exclude_dirs
                                      if _file.startswith(osp.join(exdir, '')))
         return fileset
-    
+
     def build(self, build_root_dir):
 
         with BuildSummary(build_root_dir,
@@ -171,4 +171,3 @@ class Package:
 
             self._configure(build_root_dir, build_summary)
             return self._build(build_root_dir, build_summary)
-

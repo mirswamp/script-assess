@@ -81,4 +81,3 @@ class AssessmentSummary:
         args_elem = AssessmentSummary._add(cmd_elem, 'args')
         for arg in cmd[1:]:
             AssessmentSummary._add(args_elem, 'arg', arg)
-
