@@ -199,7 +199,7 @@ def split_file_list_old(file_list, max_size, sep=' '):
     return list_of_lists
 
 
-def split_file_list(file_list, max_size, sep=' '):
+def chunk_file_list(file_list, max_size, sep=' '):
     '''
     Split file_list
     '''
