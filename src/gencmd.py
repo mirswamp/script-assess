@@ -2,6 +2,8 @@ import sys
 import os.path as osp
 import logging
 
+from collections import namedtuple
+
 import ply.lex as lex
 import ply.yacc as yacc
 from . import utillib
@@ -282,7 +284,10 @@ def gencmd(str_or_file, symbol_table):
         raise Exception('AST not correct')
 
 
-def get_param_list(filename):
+GenCmdVar = namedtuple('GenCmdVar', ['name', 'sep'])
+
+
+def get_cmd_var_list(filename):
     _tokens = tokenize(get_string(filename))
     param_list = list()
 
@@ -291,8 +296,8 @@ def get_param_list(filename):
             m = utillib.PARAM_REGEX.match(value)
             # if m is not None and 'name' in m.groupdict():
             if m and 'name' in m.groupdict():
-                param_list.append((m.groupdict()['name'],
-                                   m.groupdict().get('sep', None)))
+                param_list.append((GenCmdVar(m.groupdict()['name'],
+                                             m.groupdict().get('sep', None))))
     return param_list
 
 
