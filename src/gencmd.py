@@ -17,7 +17,8 @@ tokens = (
 )
 
 t_QSTRING = r'[\"][^\"]+[\"]'
-t_PARAM = r'<[a-zA-Z][a-zA-Z0-9_-]*(?:[%][^>]+)?>'
+# t_PARAM = r'<[a-zA-Z][a-zA-Z0-9_-]*(?:[%][^>]+)?>'
+t_PARAM = r'<[a-zA-Z][a-zA-Z0-9]*(?:[_-]?[a-zA-Z0-9]+)*(?:[%][^>]+)?>'
 t_SEPERATER = r'[:=/]'
 t_OPTIONNAME = r'(-{1,2}|[+])[a-zA-Z][a-zA-Z0-9]*(?:[_.-]?[a-zA-Z0-9]+)*'
 t_STRING = r'[\w\d\.-]+'
@@ -40,7 +41,7 @@ lexer = lex.lex(lextab='gencmd_lextab',
                 errorlog=logging.getLogger(''))
 
 
-def _get_string(arg):
+def get_string(arg):
     '''arg : can be a filename or string'''
 
     if osp.isfile(arg):
@@ -256,7 +257,7 @@ def process_quotedstring(string_template, symbol_table):
 
 def gencmd(str_or_file, symbol_table):
     '''str_or_file: Can be a file or a string'''
-    input_str = _get_string(str_or_file)
+    input_str = get_string(str_or_file)
     ast = parse_str(input_str)
 
     if isinstance(ast, tuple) and (ast[0] == 'command'):
@@ -282,7 +283,7 @@ def gencmd(str_or_file, symbol_table):
 
 
 def get_param_list(filename):
-    _tokens = tokenize(_get_string(filename))
+    _tokens = tokenize(get_string(filename))
     param_list = list()
 
     for name, value in _tokens:
@@ -290,10 +291,11 @@ def get_param_list(filename):
             m = utillib.PARAM_REGEX.match(value)
             # if m is not None and 'name' in m.groupdict():
             if m and 'name' in m.groupdict():
-                param_list.append(m.groupdict()['name'])
+                param_list.append((m.groupdict()['name'],
+                                   m.groupdict().get('sep', None)))
     return param_list
 
 
 if __name__ == '__main__':
-    # print(tokenize(_get_string(sys.argv[1])))
-    print(parse_str(_get_string(sys.argv[1])))
+    # print(tokenize(get_string(sys.argv[1])))
+    print(parse_str(get_string(sys.argv[1])))
