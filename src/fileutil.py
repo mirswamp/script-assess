@@ -3,6 +3,8 @@ import os.path as osp
 import glob
 from collections import namedtuple
 
+from . import utillib
+from . import gencmd
 
 FileFilters = namedtuple('FileFilters', ['exclude_dirs', 'exclude_files',
                                          'include_dirs', 'include_files'])
@@ -152,3 +154,47 @@ def filter_file_list(file_list, root_dir, patterns):
                                               if is_file_in(_file, file_filters.exclude_dirs)})
 
     return list(new_file_list)
+
+#########################
+
+
+def is_chunking_commands_required(invoke_file,
+                                  artifacts_dict,
+                                  target_params):
+    '''returns a tuple with key in attribute and an integer corresponding
+    to the size '''
+
+    def get_cmd_size(_dict):
+        return len(' '.join(gencmd.gencmd(invoke_file, _dict)))
+
+    artifacts_local = dict(artifacts_dict)
+
+    if get_cmd_size(artifacts_local) > utillib.max_cmd_size():
+
+        # Remove all the artifacts that the tool works on, and then check the size
+        # [artifacts_local.pop(k) for k in target_params
+        # if k in artifacts_local and artifacts_local[k]]
+        # Remove tool_target_artifacts from the dictionary, split and add them later
+        [None for _ in map(artifacts_local.pop, target_params)]
+
+        return (True, utillib.max_cmd_size() - get_cmd_size(artifacts_local))
+    else:
+        return (False, -1)
+
+
+def split_file_list(file_list, max_size, sep=' '):
+    '''
+    Split file_list 
+    '''
+    
+    def split(llist, file_list, max_size):
+        if len(sep.join(file_list)) > max_size:
+            split(llist, file_list[0:int(len(file_list) / 2)], max_size)
+            split(llist, file_list[int(len(file_list) / 2):], max_size)
+        else:
+            llist.append(file_list)
+
+    list_of_lists = list()
+    split(list_of_lists, file_list, max_size)
+    return list_of_lists
+

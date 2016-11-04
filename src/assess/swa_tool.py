@@ -7,6 +7,7 @@ from .assessment_summary import AssessmentSummary
 
 from .. import gencmd
 from .. import utillib
+from .. import fileutil
 from .. import confreader
 from ..logger import LogTaskStatus
 from ..utillib import UnpackArchiveError
@@ -122,6 +123,7 @@ class SwaTool(SwaToolBase):
         This method takes the invoke_file for the tool and return that target 
         artifacts the tools works on'''
 
+        # Get all supported langagues by the framework
         all_lang = set(LANG_EXT_MAPPING.keys())
         all_lang.add(SwaTool.FILE_TYPE)  # to add 'srcfile'
         tokens = gencmd.get_param_list(invoke_file)
@@ -130,9 +132,9 @@ class SwaTool(SwaToolBase):
     @classmethod
     def _has_no_artifacts(cls, invoke_file, artifacts):
         ''' Each tool works on certain types of files such as html, css, javascript.
-        This method takes the invoke_file for the tool and checks if artifacts 
-        required by the tool are present in the package'''
-
+        This method takes the invoke_file for the tool and checks if artifacts
+        required by the tool are present in the package
+        '''
         return not any(True if file_type in artifacts and artifacts[file_type] else False
                        for file_type in cls._tool_target_artifacts(invoke_file))
 
@@ -182,19 +184,28 @@ class SwaTool(SwaToolBase):
         tool_invoke_file = osp.join(self.input_root_dir,
                                     artifacts['tool-invoke'])
 
+        package_artifacts = {k: v for k, v in artifacts.items()
+                             if k in SwaTool._tool_target_artifacts(tool_invoke_file)
+                             and artifacts[k]}
+            
         (split_required,
-         max_allowed_size) = SwaTool._split_artifacts_required(tool_invoke_file,
-                                                               artifacts)
+         max_allowed_size) = fileutil.is_chunking_commands_required(tool_invoke_file,
+                                                                    artifacts,
+                                                                    package_artifacts.keys())
+        # (split_required,
+        #  max_allowed_size) = SwaTool._split_artifacts_required(tool_invoke_file,
+        #                                                        artifacts)
+
         if split_required:
-            tool_target_artifacts = SwaTool._tool_target_artifacts(tool_invoke_file)
-            package_artifacts = {k: v for k, v in artifacts.items()
-                                 if k in tool_target_artifacts and artifacts[k]}
+
             # Remove tool_target_artifacts from the dictionary, split and add them later
-            [None for m in map(artifacts.pop, package_artifacts.keys())]
+            [None for _ in map(artifacts.pop, package_artifacts.keys())]
 
             id_count = 1
             for file_type in package_artifacts.keys():
-                for filelist in SwaTool._split_list(package_artifacts[file_type], max_allowed_size):
+                for filelist in fileutil.split_file_list(package_artifacts[file_type],
+                                                         max_allowed_size):
+                    # for filelist in SwaTool._split_list(package_artifacts[file_type], max_allowed_size):
                     new_artifacts = dict(artifacts)
                     new_artifacts[file_type] = filelist
                     new_artifacts['build-artifact-id'] = '{0}-{1}'.format(new_artifacts['id'],

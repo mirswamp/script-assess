@@ -15,7 +15,7 @@ from ..build.build_summary import BuildSummary
 
 class JsTool(SwaTool):
 
-    FILE_TYPE = 'javascript'
+    #FILE_TYPE = 'javascript'
 
     def __init__(self, input_root_dir, tool_root_dir):
         SwaTool.__init__(self, input_root_dir, tool_root_dir)
@@ -23,7 +23,7 @@ class JsTool(SwaTool):
 
 class PhpTool(SwaTool):
 
-    FILE_TYPE = 'php'
+    #FILE_TYPE = 'php'
 
     def __init__(self, input_root_dir, tool_root_dir):
         SwaTool.__init__(self, input_root_dir, tool_root_dir)
