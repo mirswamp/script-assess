@@ -138,43 +138,6 @@ class SwaTool(SwaToolBase):
         return not any(True if file_type in artifacts and artifacts[file_type] else False
                        for file_type in cls._tool_target_artifacts(invoke_file))
 
-    @classmethod
-    def _split_artifacts_required(cls, tool_invoke_file, artifacts):
-        '''returns a tuple with key in attribute and an integer corresponding
-        to the size '''
-
-        def get_cmd_size(invoke_file, _dict):
-            return len(' '.join(gencmd.gencmd(invoke_file, _dict)))
-
-        artifacts_local = dict(artifacts)
-
-        if get_cmd_size(tool_invoke_file, artifacts_local) > utillib.max_cmd_size():
-
-            # Remove all the artifacts that the tool works on, and then check the size
-            for k in SwaTool._tool_target_artifacts(tool_invoke_file):
-                if k in artifacts_local and artifacts_local[k]:
-                    artifacts_local.pop(k)
-
-            max_allowed_size = utillib.max_cmd_size() - get_cmd_size(tool_invoke_file,
-                                                                     artifacts_local)
-            return (True, max_allowed_size)
-        else:
-            return (False, 0)
-
-    @classmethod
-    def _split_list(cls, filelist, max_args_size):
-
-        def split(llist, filelist, max_args_size):
-            if len(' '.join(filelist)) > max_args_size:
-                split(llist, filelist[0:int(len(filelist) / 2)], max_args_size)
-                split(llist, filelist[int(len(filelist) / 2):], max_args_size)
-            else:
-                llist.append(filelist)
-
-        list_of_lists = list()
-        split(list_of_lists, filelist, max_args_size)
-        return list_of_lists
-
     def __init__(self, input_root_dir, tool_root_dir):
         SwaToolBase.__init__(self, input_root_dir, tool_root_dir)
 
@@ -203,9 +166,9 @@ class SwaTool(SwaToolBase):
 
             id_count = 1
             for file_type in package_artifacts.keys():
-                for filelist in fileutil.split_file_list(package_artifacts[file_type],
+                for filelist in fileutil.chunk_file_list(package_artifacts[file_type],
                                                          max_allowed_size):
-                    # for filelist in SwaTool._split_list(package_artifacts[file_type], max_allowed_size):
+
                     new_artifacts = dict(artifacts)
                     new_artifacts[file_type] = filelist
                     new_artifacts['build-artifact-id'] = '{0}-{1}'.format(new_artifacts['id'],
