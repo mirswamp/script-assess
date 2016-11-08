@@ -31,7 +31,8 @@ class Package(metaclass=ABCMeta):
 
         if not osp.isdir(pkg_dir):
             LogTaskStatus.log_task('chdir-package-dir', 1, None,
-                                   "Directory '{0}' not found".format(osp.relpath(pkg_dir, pkg_root_dir)))
+                                   "Directory '{0}' not found".format(osp.relpath(pkg_dir,
+                                                                                  pkg_root_dir)))
             raise NotADirectoryException()
 
         self.pkg_dir = osp.normpath(pkg_dir)

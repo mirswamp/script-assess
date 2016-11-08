@@ -170,6 +170,14 @@ def run_cmd(cmd,
     return (exit_code, environ)
 
 
+def get_cmd_output(cmd):
+    try:
+        output = subprocess.check_output(cmd)
+        return output.decode('utf-8').strip()
+    except subprocess.CalledProcessError:
+        return None
+                
+
 def get_cpu_type():
     '64-bit or 32-bit'
     try:
