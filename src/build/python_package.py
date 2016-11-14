@@ -102,9 +102,10 @@ class PythonPkg(Package, metaclass=ABCMeta):
             else:
                 requirement_files = osp.join(self.pkg_dir,
                                              self.pkg_conf['package-pip-install-file'])
-                pip_cmd = '{0}/bin/pip install --user --requirement {1} {2}'.format(self.python_home,
-                                                                                    requirement_files,
-                                                                                    self.pkg_conf.get('package-pip-install-opt', ''))
+                pip_cmd = '{0}/bin/pip install --cache-dir {3}/.cache --user --requirement {1} {2}'.format(self.python_home,
+                                                                                                           requirement_files,
+                                                                                                           self.pkg_conf.get('package-pip-install-opt', ''),
+                                                                                                           build_root_dir)
 
                 outfile = osp.join(build_root_dir, 'pip_install.out')
                 errfile = osp.join(build_root_dir, 'pip_install.err')
@@ -141,7 +142,7 @@ class PythonPkg(Package, metaclass=ABCMeta):
 
 class PythonDistUtilsPkg(PythonPkg):
 
-    def get_build_cmd(self):
+    def get_build_cmd(self, build_root_dir):
         build_cmd = '{0}/bin/python{1}'.format(self.python_home,
                                                self.python_lang_version)
         build_cmd += ' ' + self.pkg_conf.get('build-file', 'setup.py')
@@ -175,10 +176,10 @@ class PythonWheelPkg(PythonPkg):
 
         self._create_venv(input_root_dir, build_root_dir)
 
-    def get_build_cmd(self):
+    def get_build_cmd(self, build_root_dir):
         pkg_archive = osp.join(self.input_root_dir, self.pkg_conf['package-archive'])
-        return '{0}/bin/pip install --user {1} && wheel unpack --dest {2} {1}'.format(
-            self.python_home, pkg_archive, self.pkg_dir)
+        return '{0}/bin/pip install --cache-dir {3}/.cache --user {1} && wheel unpack --dest {2} {1}'.format(
+            self.python_home, pkg_archive, self.pkg_dir, build_root_dir)
 
 
 class PythonOtherPkg(PythonPkg):
@@ -186,7 +187,7 @@ class PythonOtherPkg(PythonPkg):
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
         PythonPkg.__init__(self, pkg_conf_file, input_root_dir, build_root_dir)
 
-    def get_build_cmd(self):
+    def get_build_cmd(self, build_root_dir):
         return '{0} {1} {2} {3}'.format(self.pkg_conf.get('build-cmd', ''),
                                         self.pkg_conf.get('build-file', ''),
                                         self.pkg_conf.get('build-opt', ''),
@@ -199,6 +200,6 @@ class PythonNoBuildPkg(PythonPkg):
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
         PythonPkg.__init__(self, pkg_conf_file, input_root_dir, build_root_dir)
 
-    def get_build_cmd(self):
+    def get_build_cmd(self, build_root_dir):
         ''' Returns dummy build command'''
         return ':'

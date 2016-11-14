@@ -70,7 +70,7 @@ class JsNodePkg(Package):
 
         return fileset
 
-    def get_build_cmd(self):
+    def get_build_cmd(self, build_root_dir):
         return 'npm install'
 
 
@@ -79,7 +79,7 @@ class ComposerPkg(Package):
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
         Package.__init__(self, pkg_conf_file, input_root_dir, build_root_dir)
 
-    def get_build_cmd(self):
+    def get_build_cmd(self, build_root_dir):
         return 'php ${VMINPUTDIR}/composer.phar install --no-interaction --no-progress'
 
 
@@ -88,5 +88,5 @@ class PearPkg(Package):
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
         Package.__init__(self, pkg_conf_file, input_root_dir, build_root_dir)
 
-    def get_build_cmd(self):
+    def get_build_cmd(self, build_root_dir):
         return 'pear config-set php_dir ${BUILD_DIR}/user_lib && pear install --alldeps --register-only ${VMINPUTDIR}/%s' % self.pkg_conf['package-archive']

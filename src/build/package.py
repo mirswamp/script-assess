@@ -99,7 +99,7 @@ class Package(metaclass=ABCMeta):
                                                     osp.relpath(outfile, build_root_dir),
                                                     osp.relpath(errfile, build_root_dir))
 
-    def get_build_cmd(self):
+    def get_build_cmd(self, build_root_dir):
         raise NotImplementedError('Cannot use this class directly')
 
     def get_main_dir(self, pkg_build_dir):
@@ -118,7 +118,7 @@ class Package(metaclass=ABCMeta):
                                                                                       self.pkg_dir)))
                 raise NotADirectoryException()
 
-            build_cmd = self.get_build_cmd()
+            build_cmd = self.get_build_cmd(build_root_dir)
             outfile = osp.join(build_root_dir, 'build.out')
             errfile = osp.join(build_root_dir, 'build.err')
 
