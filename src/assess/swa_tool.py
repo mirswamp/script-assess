@@ -124,7 +124,7 @@ class SwaTool(SwaToolBase):
         artifacts the tools works on'''
 
         # Get all supported langagues by the framework
-        all_supported_lang = set(LANG_EXT_MAPPING.keys())
+        all_supported_lang = set('{0}-src'.format(lang) for lang in LANG_EXT_MAPPING.keys())
         all_supported_lang.add(SwaTool.FILE_TYPE)  # to add 'srcfile'
         return [var for var in gencmd.get_cmd_var_list(invoke_file)
                 if var.name in all_supported_lang]

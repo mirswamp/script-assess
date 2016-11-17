@@ -95,4 +95,4 @@ class BuildSummary:
                          if osp.splitext(_file)[1] in ext]
 
                 if files:
-                    self._add_file_set(pkg_xml, lang, files)
+                    self._add_file_set(pkg_xml, '{0}-src'.format(lang), files)

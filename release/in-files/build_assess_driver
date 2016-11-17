@@ -64,12 +64,13 @@ set -x -v
 OPT_SWAMP_DIR=/opt/swamp
 OPT_SWAMP_BASE_DIR=/opt/swamp-base
 
-[[ ! -d $OPT_SWAMP_BASE_DIR ]] && mkdir $OPT_SWAMP_BASE_DIR
+[[ ! -d $OPT_SWAMP_DIR ]] && sudo mkdir -p $OPT_SWAMP_DIR
+[[ ! -d $OPT_SWAMP_BASE_DIR ]] && mkdir -p $OPT_SWAMP_BASE_DIR
 
 if [[ "$(uname -p)" == "x86_64" ]]; then 
-	NODE_ARCHIVE="$VMINPUTDIR/node-v6.4.0-linux-x64.tar.xz"
+	NODE_ARCHIVE="$VMINPUTDIR/NODE_64_BINARY"
 else
-	NODE_ARCHIVE="$VMINPUTDIR/node-v6.4.0-linux-x86.tar.xz"
+	NODE_ARCHIVE="$VMINPUTDIR/NODE_32_BINARY"
 fi
 
 NODE_DIR=$(untar $NODE_ARCHIVE $OPT_SWAMP_BASE_DIR)

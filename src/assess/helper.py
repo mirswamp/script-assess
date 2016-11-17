@@ -28,29 +28,30 @@ class BuildSummaryError(Exception):
 class BuildArtifactsHelper:
 
     @classmethod
-    def _get_fileset(cls, build_root_dir, xml_elem):
-        fileset = list()
+    def _get_file_list(cls, build_root_dir, xml_elem):
+        fileset = set()
 
         for _file in xml_elem:
             if not osp.isabs(_file.text):
-                fileset.append(osp.join(build_root_dir, _file.text))
+                fileset.add(osp.join(build_root_dir, _file.text))
             else:
-                fileset.append(_file.text)
+                fileset.add(_file.text)
 
-        return fileset
+        return list(fileset)
 
     @classmethod
-    def get_artifacts(cls, _id, build_summary, xml_elem):
+    def get_artifacts(cls, _id, build_summary, artifacts_xml_elem):
         artifacts = dict(build_summary)
 
         artifacts['id'] = _id
         artifacts['srcfile'] = list()
 
-        for elem in xml_elem:
-            # ['javascript', 'html', 'css', 'xml']:
-            if elem.tag in LANG_EXT_MAPPING.keys():
-                fileset = BuildArtifactsHelper._get_fileset(artifacts['build-root-dir'],
-                                                            elem)
+        lang_src = {'{0}-src'.format(lang) for lang in LANG_EXT_MAPPING.keys()}
+        
+        for elem in artifacts_xml_elem:
+
+            if elem.tag in lang_src:
+                fileset = BuildArtifactsHelper._get_file_list(artifacts['build-root-dir'], elem)
                 artifacts[elem.tag] = fileset
                 artifacts['srcfile'].extend(fileset)
 
