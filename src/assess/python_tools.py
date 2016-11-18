@@ -3,6 +3,7 @@ import os.path as osp
 import re
 import subprocess
 import glob
+import logging
 
 from .. import utillib
 from .helper import BuildArtifactsHelper
@@ -35,48 +36,19 @@ class PythonTool(SwaTool):
 
             self.python_exe = '{0}/bin/python{1}'.format(self.python_home,
                                                          self.python_lang_version)
-                
-        
-    def _set_venv_bin(self, build_summary_file):
-        build_artifact_helper = BuildArtifactsHelper(build_summary_file)
-        build_root_dir = build_artifact_helper['build-root-dir']
-        self.venv_bin = osp.join(build_root_dir, PythonPkg.VENV_BIN_DIR)
-
-    def _set_venv_lib(self, build_summary_file):
-        build_artifact_helper = BuildArtifactsHelper(build_summary_file)
-        build_root_dir = build_artifact_helper['build-root-dir']
-        pkg_lang = build_artifact_helper['package-language']
-
-        self.venv_lib = None
-        regex = re.compile('Python-(?P<version>[23])')
-        match = regex.search(pkg_lang)
-        if match:
-            python_lang_version = int(match.group('version'))
-            if python_lang_version == 2:
-                self.venv_lib = '{0}/lib/python2.7/site-packages'.format(osp.join(build_root_dir,
-                                                                                  PythonPkg.VENV_DIR))
-            else:
-                major_version = self._get_python_major_version(python_lang_version)
-                if major_version:
-                    self.venv_lib = '{0}/lib/python{1}/site-packages'.format(osp.join(build_root_dir,
-                                                                                      PythonPkg.VENV_DIR),
-                                                                             major_version)
 
     def _set_user_site_packages(self):
         version = subprocess.check_output([self.python_exe,
-                                           '--version']).decode(encoding='utf-8').strip()
-
+                                           '--version'],
+                                          stderr=subprocess.STDOUT).decode(encoding='utf-8').strip()
+        logging.info('PYTHON VERSION %s', version)
+        
         match = re.compile(r'Python\s*(?P<major_version>\d[.]\d)[.]\d').match(version)
         if match:
             major_version = match.group('major_version')
-            self.user_site_packages = '/home/vamshi/.local/lib/python{0}/site-packages'.format(major_version)
+            self.user_site_packages = osp.expandvars('$HOME/.local/lib/python{0}/site-packages'.format(major_version))
+            self.user_local_bin = osp.expandvars('$HOME/.local/bin')
         
-        # user_site_cmd = [self.python_exe,
-        #                  '-c',
-        #                  "'import site; print(site.getusersitepackages())'"]
-        
-        # self.user_site_packages = utillib.get_cmd_output(user_site_cmd)
-        # print('USER SITE PACKAGES', self.user_site_packages)
 
     def _get_pkg_lib(self, build_summary_file):
         '''For setuptools and distutils package, <pkg-build-dir>/build/lib*'''
@@ -96,19 +68,12 @@ class PythonTool(SwaTool):
         else:
             self.pkg_lib = None
 
-    # def _get_env(self):
-    #     new_env = super()._get_env()
-    #     new_env['PATH'] = '{0}:{1}'.format(self.venv_bin, new_env['PATH'])
-    #     if hasattr(self, 'venv_lib') and self.venv_lib:
-    #         new_env['PYTHONPATH'] = self.venv_lib
-    #     if hasattr(self, 'pkg_lib') and self.pkg_lib:
-    #         new_env['PYTHONPATH'] = '{0}:{1}'.format(new_env['PYTHONPATH'],
-    #                                                  self.pkg_lib)
-    #     return new_env
 
     def _get_env(self):
         new_env = super()._get_env()
         new_env['PATH'] = '{0}/bin:{1}'.format(self.python_home, new_env['PATH'])
+        if hasattr(self, 'user_local_bin') and self.user_local_bin:
+            new_env['PATH'] = '{0}:{1}'.format(self.user_local_bin, new_env['PATH'])
         if hasattr(self, 'user_site_packages') and self.user_site_packages:
             new_env['PYTHONPATH'] = self.user_site_packages
         if hasattr(self, 'pkg_lib') and self.pkg_lib:

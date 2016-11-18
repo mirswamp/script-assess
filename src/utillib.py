@@ -157,8 +157,11 @@ def run_cmd(cmd,
                                  env=environ)
         popen.wait()
         exit_code = popen.returncode
-    except subprocess.CalledProcessError as err:
-        exit_code = err.returncode
+    except (subprocess.CalledProcessError, FileNotFoundException) as err:
+        if hasattr(err, 'returncode'):
+            exit_code = err.returncode
+        else:
+            exit_code = 1
     finally:
         logging.info('%s EXIT CODE %s', description, exit_code)
         logging.info('%s ENVIRONMENT %s', description, environ)
