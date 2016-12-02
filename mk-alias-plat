@@ -1,0 +1,47 @@
+#!/bin/sh
+p=`basename $0`
+
+## exit status 0 == ok   1 == erors
+errs=0
+
+## control if abort on first error, or just report errors occured
+error_action="exit 1"
+error_action=break
+error_action=continue
+
+## Given a alias specification, create a symbolic link alias
+
+for plat ; do
+	alias=`expr "$plat" : '\([^=]*\)=[^=]*'`
+	base=`expr "$plat" : '[^=]*=\([^=]*\)'`
+
+	## nice output to compliment makefile
+	echo '	'$alias '->' $base
+
+	# echo alias $alias  base $base
+
+	if [ -z "$alias" ] ; then
+		echo $p: $plat: alias missing 1>&2
+		errs=1
+		$error_action
+	fi
+	if [ -z "$base" ] ; then
+		echo $p: $plat: base missing 1>&2
+		errs=1
+		$error_action
+	fi
+	if [ ! -e $base ] ; then
+		echo $p: $plat: base dir missing 1>&2
+		errs=1
+		$error_action
+	fi
+	if [ -e $alias -a ! -L $alias ] ; then
+		echo $p: $plat: alias is not a symbolic link 1>&2
+		errs=1
+		$error_action
+	fi
+	ln -sf $base $alias
+done
+
+## indicate a failure back to make if something untoward occured
+exit $errs
