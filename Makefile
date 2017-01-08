@@ -1,4 +1,4 @@
-NAME = script-assess-v2
+NAME = script-assess
 SCRIPTS_DIR_NAME = script_assess
 VERSION = $(shell git tag | sort -V | tail -n 1)
 DEST_DIR = $(HOME)/swamp-test

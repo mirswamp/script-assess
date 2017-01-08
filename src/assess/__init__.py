@@ -25,17 +25,17 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
     tool_conf = confreader.read_conf_into_dict(tool_conf_file)
     tool_type = tool_conf['tool-type'].lower()
 
-    if tool_type is 'flow':
+    if tool_type == 'flow':
         swa_tool = Flow(input_root_dir, tool_root_dir)
-    elif tool_type is 'retire-js':
+    elif tool_type == 'retire-js':
         swa_tool = Retire(input_root_dir, tool_root_dir)
+    elif tool_type == 'cloc':
+        swa_tool = SwaTool(input_root_dir, tool_root_dir)
+    elif tool_type == 'lizard':
+        swa_tool = Lizard(input_root_dir, tool_root_dir)
     elif tool_type in ['php_codesniffer', 'phpmd']:
         swa_tool = PhpTool(input_root_dir, tool_root_dir)
-    elif tool_type is 'cloc':
-        swa_tool = SwaTool(input_root_dir, tool_root_dir)
-    elif tool_type is 'lizard':
-        swa_tool = Lizard(input_root_dir, tool_root_dir)
-    elif tool_type in ['pylint', 'bandit', 'flake8']:
+    elif tool_type in ['pylint', 'bandit', 'flake8', 'radon']:
         swa_tool = PythonTool(input_root_dir, build_summary_file, tool_root_dir)
     else:
         swa_tool = JsTool(input_root_dir, tool_root_dir)

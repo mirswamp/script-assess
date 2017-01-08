@@ -157,8 +157,8 @@ def run_cmd(cmd,
                                  env=environ)
         popen.wait()
         exit_code = popen.returncode
-    except (subprocess.CalledProcessError, FileNotFoundException) as err:
-        if hasattr(err, 'returncode'):
+    except (subprocess.CalledProcessError, FileNotFoundException) as exception:
+        if hasattr(exception, 'returncode'):
             exit_code = err.returncode
         else:
             exit_code = 1
