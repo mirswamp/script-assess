@@ -66,7 +66,7 @@ base_plat base-plat:
 	@cp -r -p src/* $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/$(SCRIPTS_DIR_NAME)
 	@mkdir $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/version
 	@: > $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/version/__init__.py
-	@echo $(VERSION) > $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/VERSION/version.txt
+	@echo $(VERSION) > $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/version/version.txt
 	@cd $(NAME_VERSION)/$(BASE_PLAT)/in-files && tar cz -f scripts.tar.gz scripts && rm -rf scripts
 	@cp -r -p $(NODE_64_FULLPATH) $(NAME_VERSION)/$(BASE_PLAT)/in-files
 	@cp -r -p $(NODE_32_FULLPATH) $(NAME_VERSION)/$(BASE_PLAT)/in-files
