@@ -43,8 +43,11 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
     try:
         with LogTaskStatus('assess') as status_dot_out:
 
-            (passed, failed,
-             assessment_summary_file) = swa_tool.assess(build_summary_file, results_root_dir)
+            (passed,
+             failed,
+             error_msgs,
+             assessment_summary_file) = swa_tool.assess(build_summary_file,
+                                                        results_root_dir)
 
             if passed == 0 and failed == 0:
                 exit_code = 0
@@ -52,7 +55,13 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
                 # status_dot_out.skip_task(task_msg=None,
                 # task_msg_indetail="No relavent files found to run '%s'" % tool_type)
             else:
-                exit_code = 1 if(failed) else 0
+                exit_code = 1 if failed else 0
+                if failed and error_msgs:
+                    LogTaskStatus.log_task('tool-package-compatibility',
+                                           exit_code,
+                                           'known tool bug',
+                                           error_msgs)
+
                 status_dot_out.update_task_status(exit_code,
                                                   'pass: {0}, fail: {1}'.format(passed, failed))
     except (BuildArtifactsError,

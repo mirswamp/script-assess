@@ -64,6 +64,9 @@ base_plat base-plat:
 	@mkdir -p $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/$(SCRIPTS_DIR_NAME)
 	@cp -r -p lib/* $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib
 	@cp -r -p src/* $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/$(SCRIPTS_DIR_NAME)
+	@mkdir $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/version
+	@: > $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/version/__init__.py
+	@echo $(VERSION) > $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/VERSION/version.txt
 	@cd $(NAME_VERSION)/$(BASE_PLAT)/in-files && tar cz -f scripts.tar.gz scripts && rm -rf scripts
 	@cp -r -p $(NODE_64_FULLPATH) $(NAME_VERSION)/$(BASE_PLAT)/in-files
 	@cp -r -p $(NODE_32_FULLPATH) $(NAME_VERSION)/$(BASE_PLAT)/in-files
@@ -71,7 +74,7 @@ base_plat base-plat:
 	@sed --in-place "s@NODE_32_BINARY@$(NODE_32_BINARY)@" $(NAME_VERSION)/$(BASE_PLAT)/in-files/build_assess_driver
 	@sed --in-place "s@NODE_64_BINARY@$(NODE_64_BINARY)@" $(NAME_VERSION)/$(BASE_PLAT)/in-files/build_assess_driver
 
-	@cp -r -p $(SWAMP_FW_PHP)/noarch/* $(NAME_VERSION)/$(BASE_PLAT)/in-files
+	@cp -r -p $(SWAMP_FW_PHP)/noarch/{composer.phar,php.ini} $(NAME_VERSION)/$(BASE_PLAT)/in-files
 
 	@$(UPDATE_PLATFORM) --framework python --dir $(NAME_VERSION)/$(BASE_PLAT)/in-files
 

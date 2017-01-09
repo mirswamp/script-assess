@@ -164,7 +164,7 @@ class Flow(SwaToolBase):
             else:
                 failed += 1
 
-        return (passed, failed, assessment_summary_file)
+        return (passed, failed, None, assessment_summary_file)
 
 
 class Retire(SwaToolBase):
@@ -241,4 +241,4 @@ class Retire(SwaToolBase):
             else:
                 failed += 1
 
-        return (passed, failed, assessment_summary_file)
+        return (passed, failed, None, assessment_summary_file)

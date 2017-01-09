@@ -5,20 +5,16 @@ import subprocess
 import glob
 import logging
 
-from .. import utillib
 from .helper import BuildArtifactsHelper
 from .swa_tool import SwaTool
-from ..build.python_package import PythonPkg
 
 
 class PythonTool(SwaTool):
 
     def __init__(self, input_root_dir, build_summary_file, tool_root_dir):
-        # self._set_venv_bin(build_summary_file)
         self._set_python_home(build_summary_file)
         self._set_user_site_packages()
         SwaTool.__init__(self, input_root_dir, tool_root_dir)
-        # self._set_venv_lib(build_summary_file)
         self._get_pkg_lib(build_summary_file)
 
     def _set_python_home(self, build_summary_file):
@@ -48,7 +44,6 @@ class PythonTool(SwaTool):
             major_version = match.group('major_version')
             self.user_site_packages = osp.expandvars('$HOME/.local/lib/python{0}/site-packages'.format(major_version))
             self.user_local_bin = osp.expandvars('$HOME/.local/bin')
-        
 
     def _get_pkg_lib(self, build_summary_file):
         '''For setuptools and distutils package, <pkg-build-dir>/build/lib*'''
@@ -68,7 +63,6 @@ class PythonTool(SwaTool):
         else:
             self.pkg_lib = None
 
-
     def _get_env(self):
         new_env = super()._get_env()
         new_env['PATH'] = '{0}/bin:{1}'.format(self.python_home, new_env['PATH'])
@@ -85,15 +79,6 @@ class PythonTool(SwaTool):
 class Flake8(PythonTool):
 
     def _set_tool_config(self, pkg_dir):
-
-        # if self._tool_conf.get('tool-config-required', None) == 'true':
-        #     if 'tool-config-file' in self._tool_conf and \
-        #        osp.isfile(osp.join(pkg_dir, self._tool_conf['tool-config-file'])):
-        #         # Make the path absolute
-        #         self._tool_conf['tool-config-file'] = osp.normpath(osp.join(pkg_dir,
-        #                                                                     self._tool_conf['tool-config-file']))
-        #     else:
-        #         self._tool_conf['tool-config-file'] = self._tool_conf['tool-default-config-file']
 
         self._tool_conf['tool-config-file'] = self._tool_conf['tool-default-config-file']
 

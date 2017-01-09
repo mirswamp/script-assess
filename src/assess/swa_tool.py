@@ -1,6 +1,7 @@
 import os
 import os.path as osp
 import logging
+import re
 
 from .helper import BuildArtifactsHelper
 from .assessment_summary import AssessmentSummary
@@ -138,6 +139,22 @@ class SwaTool(SwaToolBase):
         return not any(True if var.name in artifacts and artifacts[var.name] else False
                        for var in cls._get_tool_target_artifacts(invoke_file))
 
+    @classmethod
+    def _read_err_msg(cls, errfile, errmsg):
+        msg = ''
+
+        if osp.isfile(errfile):
+            errmsg_regex = re.compile(errmsg)
+            line_num = 1
+            with open(errfile) as fobj:
+                for line in fobj:
+                    if errmsg_regex.search(line.strip()):
+                        msg += '{0}:{1}: {2}\n'.format('/'.join(errfile.split('/')[-2:]),
+                                                       line_num, line.strip())
+                    line_num += 1
+
+        return msg
+
     def __init__(self, input_root_dir, tool_root_dir):
         SwaToolBase.__init__(self, input_root_dir, tool_root_dir)
 
@@ -225,6 +242,8 @@ class SwaTool(SwaToolBase):
 
         passed = 0
         failed = 0
+        error_msgs = ''
+        
         with AssessmentSummary(assessment_summary_file,
                                build_artifacts_helper,
                                self._tool_conf) as assessment_summary:
@@ -276,7 +295,15 @@ class SwaTool(SwaToolBase):
                         passed += 1
                     else:
                         failed += 1
+                        if ('tool-report-exit-code' in self._tool_conf) and \
+                           (exit_code == int(self._tool_conf['tool-report-exit-code'])):
+
+                            if self._tool_conf['tool-type'] == 'phpmd':
+                                error_msgs += SwaTool._read_err_msg(outfile,
+                                                                    self._tool_conf['tool-report-exit-code-msg'])
+
+                        
                 else:
                     logging.info('ASSESSMENT SKIP (NO SOURCE FILES FOUND)')
 
-            return (passed, failed, assessment_summary_file)
+            return (passed, failed, error_msgs, assessment_summary_file)
