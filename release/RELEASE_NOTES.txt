@@ -1,4 +1,9 @@
 -----------------------------------
+script-assess-new version 1.0.3 (Mon Jan  9 14:30:47 CST 2017)
+-----------------------------------
+- Integrated python-assess functionality 
+
+-----------------------------------
 script-assess version 0.7.8 (Wed Oct 12 14:55:04 CDT 2016)
 -----------------------------------
 - cd-package-dir|cd-config-dir|cd-build-dir to chdir-package-dir|chdir-config-dir|chdir-build-dir
