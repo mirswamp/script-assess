@@ -1,11 +1,12 @@
 NAME = script-assess
 SCRIPTS_DIR_NAME = script_assess
 VERSION = $(shell git tag | sort -V | tail -n 1)
-DEST_DIR = $(HOME)/swamp-test
+
 NAME_VERSION = $(DEST_DIR)/$(NAME)-$(VERSION)
 TARBALL = $(NAME_VERSION).tar
 
-P_SWAMP=$(HOME)/p/swamp
+P_SWAMP=/p/swamp
+DEST_DIR = $(P_SWAMP)/home/vamshi/mnt/v1/releases
 SWAMP_FW=$(P_SWAMP)/frameworks
 SWAMP_FW_PY=$(SWAMP_FW)/python
 SWAMP_FW_PHP=$(SWAMP_FW)/php
@@ -50,9 +51,12 @@ base_plat base-plat:
 
 	@echo ==== base platform $(BASE_PLAT)
 
-	@mkdir -p $(NAME_VERSION)/$(BASE_PLAT)/{in-files,swamp-conf}
+	@mkdir -p $(NAME_VERSION)/$(BASE_PLAT)/in-files
+	@mkdir -p $(NAME_VERSION)/$(BASE_PLAT)/swamp-conf
 
-	@cp -p release/{LICENSE.txt,README.txt,RELEASE_NOTES.txt} $(NAME_VERSION)/
+	@cp -p release/LICENSE.txt $(NAME_VERSION)/
+	@cp -p release/README.txt $(NAME_VERSION)/
+	@cp -p release/RELEASE_NOTES.txt $(NAME_VERSION)/
 
 	@echo '	'swamp-conf
 	@cp -p release/swamp-conf/* $(NAME_VERSION)/$(BASE_PLAT)/swamp-conf
@@ -74,7 +78,8 @@ base_plat base-plat:
 	@sed --in-place "s@NODE_32_BINARY@$(NODE_32_BINARY)@" $(NAME_VERSION)/$(BASE_PLAT)/in-files/build_assess_driver
 	@sed --in-place "s@NODE_64_BINARY@$(NODE_64_BINARY)@" $(NAME_VERSION)/$(BASE_PLAT)/in-files/build_assess_driver
 
-	@cp -r -p $(SWAMP_FW_PHP)/noarch/{composer.phar,php.ini} $(NAME_VERSION)/$(BASE_PLAT)/in-files
+	@cp -r -p $(SWAMP_FW_PHP)/noarch/composer.phar $(NAME_VERSION)/$(BASE_PLAT)/in-files
+	@cp -r -p $(SWAMP_FW_PHP)/noarch/php.ini $(NAME_VERSION)/$(BASE_PLAT)/in-files
 
 	@$(UPDATE_PLATFORM) --framework python --dir $(NAME_VERSION)/$(BASE_PLAT)/in-files
 
