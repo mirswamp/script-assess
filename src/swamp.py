@@ -12,15 +12,15 @@ from . import utillib
 from . import build
 
 
-def main(input_dir,
-         output_dir,
-         build_dir,
-         tool_dir,
-         results_dir):
+def main(input_root_dir,
+         output_root_dir,
+         build_root_dir,
+         tool_root_dir,
+         results_root_dir):
 
     with LogTaskStatus('all') as status_dot_out:
         try:
-            run_conf_file = osp.join(input_dir, 'run.conf')
+            run_conf_file = osp.join(input_root_dir, 'run.conf')
 
             if not osp.isfile(run_conf_file):
                 raise utillib.FileNotFoundException(run_conf_file)
@@ -46,19 +46,19 @@ def main(input_dir,
                 raise ValueError('Unknown goal {0}, it should be one of {1}'.format(goal,
                                                                                     swamp_goals))
 
-            install_os_dependencies.install(input_dir)
+            install_os_dependencies.install(input_root_dir)
 
             if goal in swamp_goals[:3]:
                 exit_code = _build_assess_parse(goal,
-                                                input_dir,
-                                                output_dir,
-                                                build_dir,
-                                                tool_dir,
-                                                results_dir)
+                                                input_root_dir,
+                                                output_root_dir,
+                                                build_root_dir,
+                                                tool_root_dir,
+                                                results_root_dir)
             elif goal in swamp_goals[3:5]:
                 raise NotImplementedError
             elif goal == swamp_goals[5]:
-                exit_code = results_parser.just_parse(input_dir, output_dir)
+                exit_code = results_parser.just_parse(input_root_dir, output_root_dir)
 
         except (BaseException, Exception) as err:
             logging.exception(err)
