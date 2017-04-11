@@ -203,8 +203,11 @@ def max_cmd_size():
 
 
 def platform():
-    platname = os.uname()
-    return platname[3] if(isinstance(platname, tuple)) else platname.version
+    if 'VMPLATNAME' in os.environ:
+        return os.environ['VMPLATNAME']
+    else:
+        platname = os.uname()
+        return platname[3] if(isinstance(platname, tuple)) else platname.version
 
 
 def write_to_file(filename, obj):

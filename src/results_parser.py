@@ -80,7 +80,7 @@ def parse_results(input_dir, assessment_summary_file, results_dir, output_dir):
             os.mkdir(parse_results_dir)
 
         parse_results_logfile = osp.join(parse_results_dir, 'resultparser.log')
-        parse_results_output_file = osp.join(parse_results_dir, 'parsed_result.xml')
+        parse_results_output_file = osp.join(parse_results_dir, 'parsed_results.xml')
         parse_weakness_count_file = osp.join(parse_results_dir, 'weakness_count.out')
 
         with LogTaskStatus('parse-results') as status_dot_out:

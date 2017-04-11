@@ -106,6 +106,9 @@ class BuildArtifactsHelper:
                                               self._build_summary['package-root-dir']),
                                      self._package_conf.get('package-dir', '.')))
 
+    def get_pkg_conf(self):
+        return self._package_conf
+        
     def get_build_artifacts(self, *args):
         ''' this is a generator function
         parses through the xml elements in the tree and

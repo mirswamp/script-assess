@@ -22,16 +22,21 @@ class AssessmentSummary:
 
         AssessmentSummary._add(self._root, 'package-root-dir',
                                osp.join(build_artifacts_helper['build-root-dir'],
-                                        build_artifacts_helper['package-root-dir'],
-                                        build_artifacts_helper['package-dir']))
+                                        build_artifacts_helper['package-root-dir']))
 
+        AssessmentSummary._add(self._root, 'package-name',
+                               build_artifacts_helper.get_pkg_conf().get('package-short-name', None))
+
+        AssessmentSummary._add(self._root, 'package-version',
+                               build_artifacts_helper.get_pkg_conf().get('package-version', None))
+        
         if 'build-summary-uuid' in build_artifacts_helper:
             AssessmentSummary._add(self._root, 'build-summary-uuid',
                                    build_artifacts_helper['build-summary-uuid'])
 
         AssessmentSummary._add(self._root, 'tool-type', tool_conf['tool-type'])
         AssessmentSummary._add(self._root, 'tool-version', tool_conf['tool-version'])
-        AssessmentSummary._add(self._root, 'platform', utillib.platform())
+        AssessmentSummary._add(self._root, 'platform-name', utillib.platform())
         AssessmentSummary._add(self._root, 'start-ts', utillib.posix_epoch())
         self._assessment_artifacts = AssessmentSummary._add(self._root, 'assessment-artifacts')
 

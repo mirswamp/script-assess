@@ -272,7 +272,7 @@ class SwaTool(SwaToolBase):
                     exit_code, environ = utillib.run_cmd(assess_cmd,
                                                          outfile=outfile,
                                                          errfile=errfile,
-                                                         cwd=results_root_dir,
+                                                         cwd=build_artifacts_helper.get_pkg_dir(),
                                                          env=self._get_env(),
                                                          description='ASSESSMENT')
 
@@ -285,7 +285,7 @@ class SwaTool(SwaToolBase):
                                                   assess_cmd,
                                                   exit_code,
                                                   environ,
-                                                  results_root_dir,
+                                                  build_artifacts_helper.get_pkg_dir(),
                                                   assessment_report,
                                                   outfile,
                                                   errfile,
