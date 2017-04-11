@@ -1,6 +1,7 @@
 import os
 import os.path as osp
 from abc import ABCMeta
+import logging
 
 from . import common
 from .build_summary import BuildSummary
@@ -22,6 +23,8 @@ class Package(metaclass=ABCMeta):
 
         self.pkg_conf = confreader.read_conf_into_dict(pkg_conf_file)
         self.pkg_conf['package-language'] = self.pkg_conf['package-language'].lower()
+        logging.info('PACKAGE.CONF: %s', self.pkg_conf)
+
         self.input_root_dir = input_root_dir
 
         self._unarchive(build_root_dir)
