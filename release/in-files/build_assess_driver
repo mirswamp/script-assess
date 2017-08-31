@@ -38,7 +38,7 @@ done
 export SWAMP_DIR=/opt/swamp-base
 
 function untar {
-    sudo tar -xpf "$1" --directory="$2" && { tar tf "$1" | cut -d / -f 1 | uniq; }
+    tar xpf "$1" --directory="$2" && { tar tf "$1" | cut -d / -f 1 | uniq; }
 }
 
 function get_conf_value {
@@ -59,34 +59,112 @@ if [[ -z "$VMPLATNAME" ]]; then
     export VMPLATNAME=$("$VMINPUTDIR/get-platform")
 fi
 
-set -x -v
+## Only use sudo if it is needed
+if [ `id -u` -eq 0 ] ; then
+	asroot=
+else
+	asroot=sudo
+fi
+
 
 OPT_SWAMP_DIR=/opt/swamp
 OPT_SWAMP_BASE_DIR=/opt/swamp-base
 
-[[ ! -d $OPT_SWAMP_DIR ]] && sudo mkdir -p $OPT_SWAMP_DIR
+[[ ! -d $OPT_SWAMP_DIR ]] && $asroot mkdir -p $OPT_SWAMP_DIR
+
+## XXX this should never be done, swamp-base is setup by run.sh
+## and MUST point at the user's directory.   It is carried over from
+## other frameworks which did it, just realized the error in August 2017
 [[ ! -d $OPT_SWAMP_BASE_DIR ]] && mkdir -p $OPT_SWAMP_BASE_DIR
 
+
+echo
+echo $p: installing node.js
+
 if [[ "$(uname -p)" == "x86_64" ]]; then 
-	NODE_ARCHIVE="$VMINPUTDIR/NODE_64_BINARY"
+	NODE_ARCHIVE="NODE_64_BINARY"
 else
-	NODE_ARCHIVE="$VMINPUTDIR/NODE_32_BINARY"
+	NODE_ARCHIVE="NODE_32_BINARY"
 fi
+
+echo $p: $NODE_ARCHIVE: selected
+
+NODE_ARCHIVE="$VMINPUTDIR/$NODE_ARCHIVE"
 
 NODE_DIR=$(untar $NODE_ARCHIVE $OPT_SWAMP_BASE_DIR)
 [[ $? == 0 ]] && export PATH="$OPT_SWAMP_BASE_DIR/$NODE_DIR/bin:$PATH"
 
-if [[ -f "$VMINPUTDIR/python-2-bin.tar.gz" ]]; then
-    sudo tar xpf "$VMINPUTDIR/python-2-bin.tar.gz" -C $OPT_SWAMP_DIR && \
-        export SWAMP_PYTHON2_HOME="$OPT_SWAMP_DIR/python2" # && \
+## XXX do python versioning in the future ... once the tarballs are
+## renamed for which python version they contain, instead of python[23]
+
+echo
+echo $p: setting up python
+
+## XXXX only install python for python-assess; no use on other frameworks
+PYTHON2_VER=2.7.10
+PYTHON2_TB=python-2-bin.tar.gz
+PYTHON2_VNAME=python-$PYTHON2_VER
+PYTHON2_DIR=$OPT_SWAMP_DIR/$PYTHON2_VNAME
+PYTHON2_SDIR=python2			## slink name for now
+py2_ok=false
+
+## XXX we always look for the FULL VERSION dir; if it is missing,
+## unpack the tarball beacause the version might differ from that
+## already installed on a VM.
+## only install it if the VM lacks it
+
+if [ ! -d $PYTHON2_DIR ] ; then
+	tb="$VMINPUTDIR/$PYTHON2_TB"
+	if [ -f "$tb" ] ; then
+		echo $p: $PYTHON2_TB: installing python2
+		$asroot tar xfp "$tb" -C $OPT_SWAMP_DIR
+		s=$?
+		if [ $s -eq 0 ] ; then
+			py2_ok=true
+		fi
+	else
+		echo $p: $PYTHON2_TB: $PYTHON2_VER: missing python2 tarball
+	fi
+else
+	echo $p: $PYTHON2_VNAME: pre-installed on VM
+	py2_ok=true
+fi
+if $py2_ok ; then
+	export SWAMP_PYTHON2_HOME="$OPT_SWAMP_DIR/$PYTHON2_SDIR"
+
+	# && \
 	#sudo $SWAMP_PYTHON2_HOME/bin/pip install --upgrade pip
 fi
 
-if [[ -f "$VMINPUTDIR/python-3-bin.tar.gz" ]]; then
-    sudo tar xpf "$VMINPUTDIR/python-3-bin.tar.gz" -C $OPT_SWAMP_DIR && \
-        export SWAMP_PYTHON3_HOME="$OPT_SWAMP_DIR/python3"  # && \
-	#	sudo $SWAMP_PYTHON3_HOME/bin/pip install --upgrade pip && \
-	#	$SWAMP_PYTHON3_HOME/bin/pip install wheel
+PYTHON3_VER=3.4.3
+PYTHON3_TB=python-3-bin.tar.gz
+PYTHON3_VNAME=python-$PYTHON3_VER
+PYTHON3_DIR=$OPT_SWAMP_DIR/$PYTHON3_VNAME
+PYTHON3_SDIR=python3			## slink name for now
+py3_ok=false
+
+if [ ! -d $PYTHON3_DIR ] ; then
+	tb="$VMINPUTDIR/$PYTHON3_TB"
+	if [ -f "$tb" ] ; then
+		echo $p: $PYTHON3_TB: installing python3
+		$asroot	tar xfp "$tb" -C $OPT_SWAMP_DIR 
+		s=$?
+		if [ $s -eq 0 ] ; then
+			py3_ok=true
+		fi
+	else
+		echo $p: $PYTHON3_TB: $PYTHON3_VER: missing python3 tarball
+	fi
+else
+	echo $p: $PYTHON3_VNAME: pre-installed on VM
+	py3_ok=true
+fi
+if $py3_ok ; then
+	export SWAMP_PYTHON3_HOME="$OPT_SWAMP_DIR/python3"
+
+	# && \
+	#sudo $SWAMP_PYTHON3_HOME/bin/pip install --upgrade pip && \
+	#$SWAMP_PYTHON3_HOME/bin/pip install wheel
 fi
 
 echo
@@ -100,4 +178,5 @@ export PYTHONPATH="${SCRIPTS_DIR}/lib:${PYTHONPATH}"
 
 echo
 echo $p: start script_assess
+set -x -v
 python3 -B -m script_assess --printVersion --printPlatform ${VMINPUTDIR} ${VMOUTPUTDIR} ${BUILD_DIR} ${TOOL_DIR} ${RESULTS_DIR}
