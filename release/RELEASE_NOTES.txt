@@ -1,4 +1,17 @@
 -----------------------------------
+script-assess version 1.0.6 (Thu Aug 31 10:17:32 CDT 2017)
+-----------------------------------
+- Fixed ESLint issues with pre-existing configuration files
+
+- Fixed and enhanced assessment summary
+
+- log package.conf to run.out
+
+- Fixed makefile to work on cs.wisc.edu
+
+- Added internet-inaccessible functionality
+
+-----------------------------------
 script-assess-new version 1.0.3 (Mon Jan  9 14:30:47 CST 2017)
 -----------------------------------
 - Integrated python-assess functionality 
