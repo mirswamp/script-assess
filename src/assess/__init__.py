@@ -11,6 +11,7 @@ from .web_tools import Retire
 from .web_tools import PhpTool
 from .web_tools import Lizard
 from .web_tools import JsTool
+from .web_tools import Eslint
 from .python_tools import PythonTool
 
 from .. import utillib
@@ -27,6 +28,8 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
 
     if tool_type == 'flow':
         swa_tool = Flow(input_root_dir, tool_root_dir)
+    elif tool_type == 'eslint':
+        swa_tool = Eslint(input_root_dir, tool_root_dir)
     elif tool_type == 'retire-js':
         swa_tool = Retire(input_root_dir, tool_root_dir)
     elif tool_type == 'cloc':

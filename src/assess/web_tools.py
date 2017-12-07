@@ -3,6 +3,9 @@ import os.path as osp
 import logging
 import fnmatch
 
+import yaml
+import json
+
 from .helper import BuildArtifactsHelper
 from .assessment_summary import AssessmentSummary
 from .swa_tool import SwaToolBase
@@ -242,3 +245,55 @@ class Retire(SwaToolBase):
                 failed += 1
 
         return (passed, failed, None, assessment_summary_file)
+
+
+class Eslint(JsTool):
+
+    def __init__(self, input_root_dir, tool_root_dir):
+        JsTool.__init__(self, input_root_dir, tool_root_dir)
+
+    def _config_needs_extra_modules(self, config_file):
+        file_ext = osp.splitext(config_file)[-1]
+
+        with open(config_file) as fobj:
+                # yaml seems to load JSON as well
+            config = yaml.load(fobj)
+
+            if 'extends' in config and config['extends'] != 'eslint:recommended':
+                return True
+            else:
+                return False
+
+    def _set_tool_config(self, pkg_dir):
+
+        if self._tool_conf.get('tool-config-required', None) == 'true':
+            if 'tool-config-file' in self._tool_conf:
+                tool_config_files = self._tool_conf['tool-config-file'].split()
+
+                self._tool_conf.pop('tool-config-file')
+                '''
+                According to the documentationhttp://eslint.org/docs/user-guide/configuring#configuration-file-formats
+                1. .eslintrc.js
+                2. .eslintrc.yaml
+                3. .eslintrc.yml
+                4. .eslintrc.json
+                5. .eslintrc
+                '''
+
+                for config_file in ['.eslintrc.js', '.eslintrc.yaml', '.eslintrc.yml',
+                                    '.eslintrc.json', '.eslintrc']:
+                    config_file = osp.join(pkg_dir, config_file)
+
+                    if osp.isfile(config_file):
+                        if self._config_needs_extra_modules(config_file):
+                            os.rename(config_file, '{0}-original'.format(config_file))
+                            self._tool_conf['tool-config-file'] = self._tool_conf['tool-default-config-file']
+                        else:
+                            self._tool_conf['tool-config-file'] = osp.normpath(config_file)
+                        break
+
+                if 'tool-config-file' not in self._tool_conf:
+                    self._tool_conf['tool-config-file'] = self._tool_conf['tool-default-config-file']
+            else:
+                self._tool_conf['tool-config-file'] = self._tool_conf['tool-default-config-file']
+

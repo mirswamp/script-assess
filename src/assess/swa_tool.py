@@ -258,8 +258,12 @@ class SwaTool(SwaToolBase):
                     outfile = osp.join(results_root_dir,
                                        'swa_tool_stdout{0}.out'.format(artifacts['build-artifact-id']))
 
-                errfile = osp.join(results_root_dir,
-                                   'swa_tool_stderr{0}.out'.format(artifacts['build-artifact-id']))
+                if 'report-on-stderr' in artifacts \
+                   and artifacts['report-on-stderr'] == 'true':
+                    errfile = artifacts['assessment-report']
+                else:
+                    errfile = osp.join(results_root_dir,
+                                       'swa_tool_stderr{0}.out'.format(artifacts['build-artifact-id']))
 
                 invoke_file = osp.join(self.input_root_dir, artifacts['tool-invoke'])
                 skip_assess = SwaTool._has_no_artifacts(invoke_file, artifacts)
