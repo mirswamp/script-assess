@@ -52,7 +52,7 @@ class SwaToolBase:
             self._tool_conf['assessment-report-template'] = 'assessment_report{0}.xml'
 
         self._unarchive(input_root_dir, tool_root_dir)
-        self._install(tool_root_dir)
+        self._install(input_root_dir, tool_root_dir)
 
         # logging.info('TOOL CONF: %s', self._tool_conf)
 
@@ -74,13 +74,13 @@ class SwaToolBase:
                             for var_val in tool_env.split(',')))
         return new_env
 
-    def _install(self, tool_root_dir):
+    def _install(self, input_root_dir, tool_root_dir):
 
         with LogTaskStatus('tool-install') as status_dot_out:
 
             if 'tool-install-cmd' not in self._tool_conf:
-                self._tool_conf['executable'] = osp.normpath(osp.join(osp.join(tool_root_dir,
-                                                                               self._tool_conf['tool-dir']),
+                self._tool_conf['executable'] = osp.normpath(osp.join(tool_root_dir,
+                                                                      self._tool_conf['tool-dir'],
                                                                       self._tool_conf['executable']))
 
                 status_dot_out.skip_task()
@@ -109,6 +109,9 @@ class SwaToolBase:
         else:
             return True if(exit_code == 0) else False
 
+    def get_tool_target_artifacts(self):
+        return self._tool_conf.get('tool-target-artifacts', BuildSummary.PKG_SRC_TAG)
+
     def assess(self, build_summary_file, results_root_dir):
         raise NotImplementedError
 
@@ -119,7 +122,7 @@ class SwaTool(SwaToolBase):
     FILE_TYPE = 'srcfile'
 
     @classmethod
-    def _get_tool_target_artifacts(cls, invoke_file):
+    def _get_tool_target_filetypes(cls, invoke_file):
         ''' Each tool works on certain types of files such as html, css, javascript.
         This method takes the invoke_file for the tool and return that target 
         artifacts the tools works on'''
@@ -137,7 +140,7 @@ class SwaTool(SwaToolBase):
         required by the tool are present in the package
         '''
         return not any(True if var.name in artifacts and artifacts[var.name] else False
-                       for var in cls._get_tool_target_artifacts(invoke_file))
+                       for var in cls._get_tool_target_filetypes(invoke_file))
 
     @classmethod
     def _read_err_msg(cls, errfile, errmsg):
@@ -165,15 +168,15 @@ class SwaTool(SwaToolBase):
                                     artifacts['tool-invoke'])
 
         # The langagues that tool works on
-        tool_target_artifacts = SwaTool._get_tool_target_artifacts(tool_invoke_file)
+        tool_target_filetypes = SwaTool._get_tool_target_filetypes(tool_invoke_file)
 
         # The langague files that are present in the package
         # package_artifacts = {k: v for k, v in artifacts.items()
-        #                      if k in tool_target_artifacts
+        #                      if k in tool_target_filetypes
         #                      and k in artifacts
         #                      and artifacts[k.name]}
 
-        package_artifacts = {var.name: artifacts[var.name] for var in tool_target_artifacts
+        package_artifacts = {var.name: artifacts[var.name] for var in tool_target_filetypes
                              if var.name in artifacts}
 
         (split_required,
@@ -183,17 +186,17 @@ class SwaTool(SwaToolBase):
 
         if split_required:
 
-            # Remove tool_target_artifacts from the dictionary, chunk and add them later
+            # Remove tool_target_filetypes from the dictionary, chunk and add them later
             for key in package_artifacts.keys():
                 artifacts.pop(key)
 
-            tool_target_artifacts_dict = {var.name: var.sep for var in tool_target_artifacts}
+            tool_target_filetypes_dict = {var.name: var.sep for var in tool_target_filetypes}
 
             id_count = 1
             for file_type in package_artifacts.keys():
                 for filelist in fileutil.chunk_file_list(package_artifacts[file_type],
                                                          max_cmd_size,
-                                                         tool_target_artifacts_dict.get(file_type, ' ')):
+                                                         tool_target_filetypes_dict.get(file_type, ' ')):
 
                     new_artifacts = dict(artifacts)
                     new_artifacts[file_type] = filelist
@@ -208,7 +211,7 @@ class SwaTool(SwaToolBase):
 
     def _get_build_artifacts(self, build_artifacts_helper, results_root_dir):
 
-        for artifacts in build_artifacts_helper.get_build_artifacts(BuildSummary.PKG_SRC_TAG):
+        for artifacts in build_artifacts_helper.get_build_artifacts(self.get_tool_target_artifacts()):
             artifacts['build-artifact-id'] = artifacts['id']
             artifacts['results-root-dir'] = results_root_dir
             artifacts.update(self._tool_conf)
@@ -217,18 +220,22 @@ class SwaTool(SwaToolBase):
 
             for new_artifacts in self._split_build_artifacts(artifacts):
                 yield new_artifacts
-
+    
     def _set_tool_config(self, pkg_dir):
 
-        if self._tool_conf.get('tool-config-required', None) == 'true':
-            if 'tool-config-file' in self._tool_conf and \
-               osp.isfile(osp.join(pkg_dir, self._tool_conf['tool-config-file'])):
-                # Make the path absolute
-                self._tool_conf['tool-config-file'] = osp.normpath(osp.join(pkg_dir,
-                                                                            self._tool_conf['tool-config-file']))
-            else:
-                self._tool_conf['tool-config-file'] = self._tool_conf['tool-default-config-file']
+        with LogTaskStatus('tool-configure') as status_dot_out:
 
+            if self._tool_conf.get('tool-config-required', None) == 'true':
+                if 'tool-config-file' in self._tool_conf and \
+                   osp.isfile(osp.join(pkg_dir, self._tool_conf['tool-config-file'])):
+                    # Make the path absolute
+                    self._tool_conf['tool-config-file'] = osp.normpath(osp.join(pkg_dir,
+                                                                                self._tool_conf['tool-config-file']))
+                else:
+                    self._tool_conf['tool-config-file'] = self._tool_conf.get('tool-default-config-file', '')
+            else:
+                status_dot_out.skip_task()
+                    
     def assess(self, build_summary_file, results_root_dir):
 
         if not osp.isdir(results_root_dir):
@@ -264,7 +271,10 @@ class SwaTool(SwaToolBase):
                 else:
                     errfile = osp.join(results_root_dir,
                                        'swa_tool_stderr{0}.out'.format(artifacts['build-artifact-id']))
-
+                    
+                assessment_working_dir = artifacts.get('assessment-working-dir',
+                                                       build_artifacts_helper.get_pkg_dir())
+                    
                 invoke_file = osp.join(self.input_root_dir, artifacts['tool-invoke'])
                 skip_assess = SwaTool._has_no_artifacts(invoke_file, artifacts)
 
@@ -276,7 +286,7 @@ class SwaTool(SwaToolBase):
                     exit_code, environ = utillib.run_cmd(assess_cmd,
                                                          outfile=outfile,
                                                          errfile=errfile,
-                                                         cwd=build_artifacts_helper.get_pkg_dir(),
+                                                         cwd=assessment_working_dir,
                                                          env=self._get_env(),
                                                          description='ASSESSMENT')
 
@@ -289,12 +299,13 @@ class SwaTool(SwaToolBase):
                                                   assess_cmd,
                                                   exit_code,
                                                   environ,
-                                                  build_artifacts_helper.get_pkg_dir(),
+                                                  assessment_working_dir,
                                                   assessment_report,
                                                   outfile,
                                                   errfile,
                                                   start_time,
                                                   utillib.posix_epoch())
+                    
                     if self._validate_exit_code(exit_code):
                         passed += 1
                     else:
@@ -306,7 +317,6 @@ class SwaTool(SwaToolBase):
                                 error_msgs += SwaTool._read_err_msg(outfile,
                                                                     self._tool_conf['tool-report-exit-code-msg'])
 
-                        
                 else:
                     logging.info('ASSESSMENT SKIP (NO SOURCE FILES FOUND)')
 

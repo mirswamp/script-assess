@@ -10,6 +10,7 @@ from .python_package import PythonDistUtilsPkg
 from .python_package import PythonWheelPkg
 from .python_package import PythonNoBuildPkg
 from .python_package import PythonOtherPkg
+from .csharp_package import CsharpPkg
 from .common import EmptyPackageError
 from .common import CommandFailedError
 
@@ -34,7 +35,8 @@ def get_pkg_obj(pkg_conf_file, input_root_dir, build_root_dir):
         'python-setuptools': PythonDistUtilsPkg,
         'wheels': PythonWheelPkg,
         'other': PythonOtherPkg,
-        'none': PythonNoBuildPkg
+        'none': PythonNoBuildPkg,
+        'msbuild': CsharpPkg
     }
 
     build_sys = pkg_conf['build-sys']

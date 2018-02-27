@@ -23,8 +23,9 @@ def main():
         logging.info('PLATFORM: ' + clargs.platform)
 
     try:
-        #os.environ['SCRIPTS_DIR'] = osp.join(os.getenv('HOME'), 'scripts')
-        os.environ['TOOL_DIR'] = osp.realpath(clargs.tool_dir)
+        os.environ['SCRIPTS_DIR'] = osp.join(os.getenv('HOME'), 'scripts')
+        os.environ['TOOL_ROOT_DIR'] = osp.realpath(clargs.tool_dir)
+        os.environ['TOOL_DIR'] = os.environ['TOOL_ROOT_DIR']
 
         exit_code = swamp.main(osp.realpath(clargs.input_dir),
                                osp.realpath(clargs.output_dir),
@@ -34,8 +35,10 @@ def main():
         sys.exit(exit_code)
     finally:
         logger.shutdown()
-        # os.environ.pop('SCRIPTS_DIR')
+        os.environ.pop('SCRIPTS_DIR')
+        os.environ.pop('TOOL_ROOT_DIR')
         os.environ.pop('TOOL_DIR')
+
 
 if __name__ == '__main__':
     main()

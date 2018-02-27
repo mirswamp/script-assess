@@ -145,14 +145,17 @@ class Package(metaclass=ABCMeta):
                                                 osp.relpath(outfile, build_root_dir),
                                                 osp.relpath(errfile, build_root_dir))
 
-            fileset = set()
-            for dir_path in self.get_main_dir(pkg_build_dir):
-                fileset.update(self.get_src_files(dir_path,
-                                                  self.pkg_conf.get('package-exclude-paths',
-                                                                    '')))
-
-            build_summary.add_build_artifacts(fileset, self.pkg_conf['package-language'])
+            self.add_build_artifacts(build_summary, build_root_dir, pkg_build_dir)
             return (exit_code, BuildSummary.FILENAME)
+
+    def add_build_artifacts(self, build_summary, build_root_dir, pkg_build_dir):
+        fileset = set()
+        for dir_path in self.get_main_dir(pkg_build_dir):
+            fileset.update(self.get_src_files(dir_path,
+                                              self.pkg_conf.get('package-exclude-paths',
+                                                                '')))
+
+        build_summary.add_build_artifacts(fileset, self.pkg_conf['package-language'])
 
     def get_src_files(self, pkg_dir, exclude_filter):
 

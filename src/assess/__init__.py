@@ -13,6 +13,8 @@ from .web_tools import Lizard
 from .web_tools import JsTool
 from .web_tools import Eslint
 from .python_tools import PythonTool
+from .csharp_tools import DevskimTool
+from .csharp_tools import RoslynSecurityGuard
 
 from .. import utillib
 from .. import confreader
@@ -40,9 +42,13 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
         swa_tool = PhpTool(input_root_dir, tool_root_dir)
     elif tool_type in ['pylint', 'bandit', 'flake8', 'radon']:
         swa_tool = PythonTool(input_root_dir, build_summary_file, tool_root_dir)
+    elif tool_type == 'devskim':
+        swa_tool = DevskimTool(input_root_dir, tool_root_dir)
+    elif tool_type in ['roslyn-security-gaurd', 'code-cracker']:
+        swa_tool = RoslynSecurityGuard(input_root_dir, tool_root_dir)
     else:
         swa_tool = JsTool(input_root_dir, tool_root_dir)
-
+        
     try:
         with LogTaskStatus('assess') as status_dot_out:
 

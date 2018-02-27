@@ -58,6 +58,29 @@ class BuildArtifactsHelper:
         return artifacts
 
     @classmethod
+    def get_dotnet_artifacts(cls, _id, build_summary, artifacts_xml_elem):
+        artifacts = dict(build_summary)
+
+        artifacts['id'] = _id
+        artifacts['project-file'] = artifacts_xml_elem.find('project-file').text
+        artifacts['executable'] = artifacts_xml_elem.find('executable').text
+
+        flags = artifacts_xml_elem.find('flags')
+        if flags:
+            artifacts['flag'] = [flag.text for flag in flags.iter('flag')]
+
+        classpath = artifacts_xml_elem.find('classpath')
+        if classpath:
+            artifacts['classpath'] = [_file.text for _file in classpath.iter('file')]
+
+        srcfile = artifacts_xml_elem.find('srcfile')
+        if srcfile:
+            artifacts['dotnet-src'] = [_file.text for _file in srcfile.iter('file')]
+            artifacts['srcfile'] = artifacts['dotnet-src']
+
+        return artifacts
+    
+    @classmethod
     def _get_build_summary(cls, root):
         '''returns a dictionary'''
         return {elem.tag: elem.text for elem in root
@@ -92,12 +115,6 @@ class BuildArtifactsHelper:
     def __contains__(self, key):
         return True if key in self._build_summary or key in self._package_conf else False
 
-    def __getitem__old(self, key):
-        if key in self._build_summary:
-            return self._build_summary[key]
-        else:
-            return self._package_conf.get(key, None)
-
     def __getitem__(self, key):
         return self._build_summary.get(key, self._package_conf.get(key, None))
 
@@ -121,6 +138,11 @@ class BuildArtifactsHelper:
                 yield BuildArtifactsHelper.get_artifacts(count,
                                                          self._build_summary,
                                                          elem)
+
+            if (elem.tag == 'dotnet-compile') and (elem.tag in args):
+                yield BuildArtifactsHelper.get_dotnet_artifacts(count,
+                                                                self._build_summary,
+                                                                elem)
 
             elif (elem.tag == 'no-build') and (elem.tag in args):
                 raise NotImplementedError

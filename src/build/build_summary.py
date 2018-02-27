@@ -46,6 +46,9 @@ class BuildSummary:
         build_summary_file = osp.join(self._build_root_dir, BuildSummary.FILENAME)
         tree.write(build_summary_file, encoding='UTF-8', xml_declaration=True)
 
+    def add_to_root(self, elem):
+        self._root.append(elem)
+
     def add_command(self, cmd_type, executable, args,
                     exit_code, environ, working_dir,
                     stdout_file, stderr_file):

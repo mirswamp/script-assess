@@ -10,7 +10,9 @@ from .helper import BuildArtifactsHelper
 from .assessment_summary import AssessmentSummary
 from .swa_tool import SwaToolBase
 from .swa_tool import SwaTool
+from ..logger import LogTaskStatus
 
+from .. import confreader
 from .. import gencmd
 from .. import utillib
 from ..build.build_summary import BuildSummary
@@ -71,8 +73,15 @@ class Flow(SwaToolBase):
 
     def _create_flowconfig(self, assessment_working_dir):
 
-        if not osp.isfile(osp.join(assessment_working_dir, '.flowconfig')):
+        with LogTaskStatus('tool-configure') as status_dot_out:
 
+            task_msg = ''
+            config_file = osp.join(assessment_working_dir, '.flowconfig')
+            if osp.isfile(config_file):
+                os.rename(config_file, '{0}-original'.format(config_file))
+                task_msg = 'Disabling local configuration file {0}/{1}'.format(osp.basename(assessment_working_dir),
+                                                                               osp.basename(config_file))
+            
             content = '''[include]\n\n[libs]\n\n[options]\n\n[ignore]\n<PROJECT_ROOT>/node_modules\n'''
             if self.build_artifacts_helper['package-exclude-paths']:
                 # TODO: These may have to converted into ocaml regex
@@ -97,6 +106,10 @@ class Flow(SwaToolBase):
             with open(osp.join(assessment_working_dir, '.flowconfig'), 'w') as fobj:
                 logging.info('DOT FLOWCONFIG: %s', content)
                 fobj.write(content)
+
+            status_dot_out.update_task_status(0,
+                                              msg_inline='using-swamp-config',
+                                              msg_indetail=task_msg)
 
     def assess(self, build_summary_file, results_root_dir):
 
@@ -174,6 +187,24 @@ class Retire(SwaToolBase):
 
     def __init__(self, input_root_dir, tool_root_dir):
         SwaToolBase.__init__(self, input_root_dir, tool_root_dir)
+
+    def _install(self, input_root_dir, tool_root_dir):
+
+        with LogTaskStatus('tool-install'):
+
+            if 'tool-install-cmd' not in self._tool_conf:
+                run_conf = confreader.read_conf_into_dict(osp.join(input_root_dir, 'run.conf'))
+
+                if run_conf.get('internet-inaccessible', 'false') == 'true':
+                    jsrepository = osp.join(input_root_dir, 'jsrepository.json')
+                    npmrepository = osp.join(input_root_dir, 'npmrepository.json')
+
+                    if not osp.isfile(jsrepository) or not osp.isfile(npmrepository):
+                        raise ToolInstallFailedError('''Tool database files '{0}, {1}' not found, this is required for internet-inaccessible' environment'''.format(osp.basename(jsrepository), osp.basename(npmrepository)))
+
+            self._tool_conf['executable'] = osp.normpath(osp.join(tool_root_dir,
+                                                                  self._tool_conf['tool-dir'],
+                                                                  self._tool_conf['executable']))
 
     def assess(self, build_summary_file, results_root_dir):
 
@@ -264,7 +295,7 @@ class Eslint(JsTool):
             else:
                 return False
 
-    def _set_tool_config(self, pkg_dir):
+    def _set_tool_config_unused(self, pkg_dir):
 
         if self._tool_conf.get('tool-config-required', None) == 'true':
             if 'tool-config-file' in self._tool_conf:
