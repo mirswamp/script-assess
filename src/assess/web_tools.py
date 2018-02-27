@@ -10,6 +10,7 @@ from .helper import BuildArtifactsHelper
 from .assessment_summary import AssessmentSummary
 from .swa_tool import SwaToolBase
 from .swa_tool import SwaTool
+from .swa_tool import ToolInstallFailedError
 from ..logger import LogTaskStatus
 
 from .. import confreader
