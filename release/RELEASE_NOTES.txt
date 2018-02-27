@@ -1,4 +1,15 @@
 -----------------------------------
+script-assess version 1.1.0 (Tue Feb 27 15:09:57 CST 2018)
+-----------------------------------
+
+- support for dotnet
+
+- Fixed eslint,flow issues with configuration files in the package
+
+- retire.js error reporting for internet-inaccessible
+
+- using Node.js LTS Version: 8.9.4 (includes npm 5.6.0)
+-----------------------------------
 script-assess version 1.0.6 (Thu Aug 31 10:17:32 CDT 2017)
 -----------------------------------
 - Fixed ESLint issues with pre-existing configuration files
