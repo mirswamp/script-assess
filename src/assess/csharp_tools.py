@@ -28,6 +28,10 @@ class RoslynSecurityGuard(SwaTool):
         for artifacts in build_artifacts_helper.get_build_artifacts(self.get_tool_target_artifacts()):
             if 'classpath' in artifacts:
                 artifacts['classpath'] = ['/reference:' + _file for _file in artifacts['classpath']]
+
+            if 'flag' in artifacts and '/warnaserror+' in artifacts['flag']:
+                artifacts['flag'].remove('/warnaserror+')
+                
             artifacts['build-artifact-id'] = artifacts['id']
             artifacts['results-root-dir'] = results_root_dir
 
