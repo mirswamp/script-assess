@@ -81,6 +81,14 @@ BINARY_SHARE_PLATS=	\
 	rhel-7.3-64=rhel-7.2-64		\
 	scientific-7.3-64=scientific-7.2-64		\
 	\
+	centos-7.4-64=centos-7.3-64		\
+	rhel-7.4-64=rhel-7.3-64		\
+	scientific-7.4-64=scientific-7.3-64		\
+	\
+	centos-7.5-64=centos-7.4-64		\
+	rhel-7.5-64=rhel-7.4-64		\
+	scientific-7.5-64=scientific-7.4-64		\
+	\
 	fedora-25-64=fedora-24-64		\
 
 ## BLANK ABOVE
@@ -147,6 +155,14 @@ HYPERVISOR_PLATS=	\
 	test-centos-7.3-64=centos-7.3-64		\
 	test-rhel-7.3-64=rhel-7.3-64			\
 	test-scientific-7.3-64=scientific-7.3-64	\
+	\
+	test-centos-7.4-64=centos-7.4-64		\
+	test-rhel-7.4-64=rhel-7.4-64			\
+	test-scientific-7.4-64=scientific-7.4-64	\
+	\
+	test-centos-7.5-64=centos-7.5-64		\
+	test-rhel-7.5-64=rhel-7.5-64			\
+	test-scientific-7.5-64=scientific-7.5-64	\
 
 ## BLANK ABOVE
 

@@ -11,6 +11,7 @@ SWAMP_FW=$(P_SWAMP)/frameworks
 SWAMP_FW_PY=$(SWAMP_FW)/python
 SWAMP_FW_PHP=$(SWAMP_FW)/php
 SWAMP_FW_NODE=$(SWAMP_FW)/node.js
+SWAMP_FW_WEB=$(SWAMP_FW)/web
 
 ## location of python binaries
 PYTHON_2_BINARIES=$(SWAMP_FW_PY)/python-2-arch
@@ -68,6 +69,7 @@ base_plat base-plat:
 	@mkdir -p $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/$(SCRIPTS_DIR_NAME)
 	@cp -r -p build_monitors/* $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/
 	@cp -r -p lib/* $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib
+	@cp -r -p $(SWAMP_FW_WEB)/lib/* $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib
 	@cp -r -p src/* $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/$(SCRIPTS_DIR_NAME)
 	@mkdir $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/version
 	@: > $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/version/__init__.py
