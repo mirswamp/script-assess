@@ -41,7 +41,7 @@ $(TARBALL): $(NAME_VERSION)
 	$(MAKE_MD5SUM)
 # tar -cf $(TARBALL) $(NAME_VERSION)
 
-$(NAME_VERSION): lib/* src/* ./release/* 
+$(NAME_VERSION): build_monitors/* lib/* src/* ./release/* 
 	$(MAKE) base_plat normal_plats alias_plats
 
 ## Create a base platform.  If the base platform is a MD-architecture,
@@ -66,6 +66,7 @@ base_plat base-plat:
 
 
 	@mkdir -p $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/$(SCRIPTS_DIR_NAME)
+	@cp -r -p build_monitors/* $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/
 	@cp -r -p lib/* $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib
 	@cp -r -p src/* $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/$(SCRIPTS_DIR_NAME)
 	@mkdir $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/version
