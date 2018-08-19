@@ -11,6 +11,8 @@ from .. import utillib
 
 class RoslynSecurityGuard(SwaTool):
 
+    RESPONSE_FILE = 'arguments{0}.rsp'
+
     def __init__(self, input_root_dir, tool_root_dir):
         SwaTool.__init__(self, input_root_dir, tool_root_dir)
 
@@ -21,17 +23,14 @@ class RoslynSecurityGuard(SwaTool):
             if not analyzer_files:
                 raise Exception
 
-            self._tool_conf['analyzer'] = ['/analyzer:' + _file for _file in analyzer_files]
-        
+            self._tool_conf['analyzer'] = analyzer_files
+
+        print(self._tool_conf)
+
     def _get_build_artifacts(self, build_artifacts_helper, results_root_dir):
 
         for artifacts in build_artifacts_helper.get_build_artifacts(self.get_tool_target_artifacts()):
-            if 'classpath' in artifacts:
-                artifacts['classpath'] = ['/reference:' + _file for _file in artifacts['classpath']]
 
-            if 'flag' in artifacts and '/warnaserror+' in artifacts['flag']:
-                artifacts['flag'].remove('/warnaserror+')
-                
             artifacts['build-artifact-id'] = artifacts['id']
             artifacts['results-root-dir'] = results_root_dir
 
@@ -42,8 +41,64 @@ class RoslynSecurityGuard(SwaTool):
             artifacts['assessment-report'] = osp.join(artifacts['results-root-dir'],
                                                       artifacts['assessment-report-template'].format(artifacts['build-artifact-id']))
 
+            response_file = osp.join(results_root_dir, RoslynSecurityGuard.RESPONSE_FILE.format(artifacts['build-artifact-id']))
+
+            if 'flag' in artifacts and '/warnaserror+' in artifacts['flag']:
+                artifacts['flag'].remove('/warnaserror+')
+
+            with open(response_file, 'w') as fobj:
+                if 'flag' in artifacts:
+                    for flag in artifacts['flag']:
+                        fobj.write(flag + '\n')
+
+                if 'classpath' in artifacts:
+                    for _file in artifacts['classpath']:
+                        fobj.write('/reference:"{0}"\n'.format(_file))
+
+                if 'analyzer' in artifacts:
+                    for _file in artifacts['analyzer']:
+                        fobj.write('/analyzer:"{0}"\n'.format(_file))
+
+                if 'ruleset' in artifacts:
+                    fobj.write('/ruleset:"{0}"\n'.format(artifacts['ruleset']))
+
+                for _file in artifacts['dotnet-src']:
+                    fobj.write('"{0}"\n'.format(_file))
+
+            artifacts['response-file'] = '@' + response_file
+            yield artifacts
+
+
+    def _get_build_artifacts_old(self, build_artifacts_helper, results_root_dir):
+
+        for artifacts in build_artifacts_helper.get_build_artifacts(self.get_tool_target_artifacts()):
+            if 'classpath' in artifacts:
+                artifacts['classpath'] = ['/reference:' + _file for _file in artifacts['classpath']]
+
+            if 'flag' in artifacts and '/warnaserror+' in artifacts['flag']:
+                artifacts['flag'].remove('/warnaserror+')
+
+            artifacts['build-artifact-id'] = artifacts['id']
+            artifacts['results-root-dir'] = results_root_dir
+
+            if 'project-file' in artifacts and osp.isfile(artifacts['project-file']):
+                artifacts['assessment-working-dir'] = osp.dirname(artifacts['project-file'])
+
+            artifacts.update(self._tool_conf)
+            artifacts['assessment-report'] = osp.join(artifacts['results-root-dir'],
+                                                      artifacts['assessment-report-template'].format(
+                                                          artifacts['build-artifact-id']))
+
             for new_artifacts in self._split_build_artifacts(artifacts):
                 yield new_artifacts
+
+    def _has_no_artifacts(self, invoke_file, artifacts):
+        ''' Each tool works on certain types of files such as html, css, javascript.
+        This method takes the invoke_file for the tool and checks if artifacts
+        required by the tool are present in the package
+        '''
+
+        return 'dotnet-src' not in artifacts or len(artifacts['dotnet-src']) == 0
 
 
 class DevskimTool(SwaTool):

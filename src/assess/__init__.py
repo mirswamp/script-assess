@@ -44,7 +44,7 @@ def assess(input_root_dir, output_root_dir, tool_root_dir,
         swa_tool = PythonTool(input_root_dir, build_summary_file, tool_root_dir)
     elif tool_type == 'devskim':
         swa_tool = DevskimTool(input_root_dir, tool_root_dir)
-    elif tool_type in ['roslyn-security-gaurd', 'code-cracker']:
+    elif tool_type in ['security-code-scan', 'roslyn-security-gaurd', 'code-cracker']:
         swa_tool = RoslynSecurityGuard(input_root_dir, tool_root_dir)
     else:
         swa_tool = JsTool(input_root_dir, tool_root_dir)

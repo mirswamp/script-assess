@@ -2,6 +2,7 @@ import os
 import os.path as osp
 from abc import ABCMeta
 import logging
+import pdb
 
 from . import common
 from .build_summary import BuildSummary
@@ -51,7 +52,7 @@ class Package(metaclass=ABCMeta):
         with LogTaskStatus('package-unarchive'):
             pkg_archive = osp.join(self.input_root_dir, self.pkg_conf['package-archive'])
             pkg_root_dir = osp.join(build_root_dir, common.PKG_ROOT_DIRNAME)
-
+                        
             if utillib.unpack_archive(pkg_archive, pkg_root_dir, True) != 0:
                 raise UnpackArchiveError(osp.basename(pkg_archive))
 
@@ -132,8 +133,8 @@ class Package(metaclass=ABCMeta):
                                                  env=self._get_env(pkg_build_dir),
                                                  description='BUILD')
 
-            build_summary.add_command('build', build_cmd,
-                                      [], exit_code, environ,
+            build_summary.add_command('build', build_cmd[0],
+                                      build_cmd[1:], exit_code, environ,
                                       environ['PWD'],
                                       outfile, errfile)
 

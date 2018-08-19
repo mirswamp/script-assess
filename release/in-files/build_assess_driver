@@ -179,4 +179,4 @@ export PYTHONPATH="${SCRIPTS_DIR}/lib:${PYTHONPATH}"
 echo
 echo $p: start script_assess
 set -x -v
-python3 -B -m script_assess --printVersion --printPlatform ${VMINPUTDIR} ${VMOUTPUTDIR} ${BUILD_DIR} ${TOOL_DIR} ${RESULTS_DIR}
+python3 -B -m script_assess --printVersion --printPlatform --inputDir "$VMINPUTDIR" --outDir "$VMOUTPUTDIR" --buildDir "$BUILD_DIR" --toolDir "$TOOL_DIR" --resultsDir "$RESULTS_DIR"

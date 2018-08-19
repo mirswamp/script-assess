@@ -46,23 +46,33 @@ def process_cmd_line_args():
                         action=PrintPlatform,
                         help='gets the current platform name and version')
 
-    parser.add_argument('input_dir',
+    parser.add_argument('--inputDir',
+                        dest='input_dir',
+                        required=True,
                         type=str,
                         help='Path to the Input Directory')
 
-    parser.add_argument('output_dir',
+    parser.add_argument('--outDir',
+                        dest='output_dir',
+                        required=True,
                         type=str,
                         help='Path to the Output Directory')
 
-    parser.add_argument('build_dir',
+    parser.add_argument('--buildDir',
+                        dest='build_dir',
+                        required=True,
                         type=str,
                         help='Path to the Build Directory where the package is unarchived and built')
 
-    parser.add_argument('tool_dir',
+    parser.add_argument('--toolDir',
+                        dest='tool_dir',
+                        required=True,
                         type=str,
                         help='Path to the Tool Directory')
 
-    parser.add_argument('results_dir',
+    parser.add_argument('--resultsDir',
+                        dest='results_dir',
+                        required=True,
                         type=str,
                         help='Path to the directory where Assessment results are placed')
 

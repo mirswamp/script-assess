@@ -2,6 +2,7 @@ import os
 import os.path as osp
 import logging
 import re
+import pdb
 
 from .helper import BuildArtifactsHelper
 from .assessment_summary import AssessmentSummary
@@ -134,15 +135,6 @@ class SwaTool(SwaToolBase):
                 if var.name in all_supported_lang]
 
     @classmethod
-    def _has_no_artifacts(cls, invoke_file, artifacts):
-        ''' Each tool works on certain types of files such as html, css, javascript.
-        This method takes the invoke_file for the tool and checks if artifacts
-        required by the tool are present in the package
-        '''
-        return not any(True if var.name in artifacts and artifacts[var.name] else False
-                       for var in cls._get_tool_target_filetypes(invoke_file))
-
-    @classmethod
     def _read_err_msg(cls, errfile, errmsg):
         msg = ''
 
@@ -160,6 +152,14 @@ class SwaTool(SwaToolBase):
 
     def __init__(self, input_root_dir, tool_root_dir):
         SwaToolBase.__init__(self, input_root_dir, tool_root_dir)
+
+    def _has_no_artifacts(self, invoke_file, artifacts):
+        ''' Each tool works on certain types of files such as html, css, javascript.
+        This method takes the invoke_file for the tool and checks if artifacts
+        required by the tool are present in the package
+        '''
+        return not any(True if var.name in artifacts and artifacts[var.name] else False
+                       for var in SwaTool._get_tool_target_filetypes(invoke_file))
 
     def _split_build_artifacts(self, artifacts):
         '''Splits only if required'''
@@ -276,7 +276,7 @@ class SwaTool(SwaToolBase):
                                                        build_artifacts_helper.get_pkg_dir())
                     
                 invoke_file = osp.join(self.input_root_dir, artifacts['tool-invoke'])
-                skip_assess = SwaTool._has_no_artifacts(invoke_file, artifacts)
+                skip_assess = self._has_no_artifacts(invoke_file, artifacts)
 
                 # SKIP Assessment if there are no artifacts relavent to the tool
                 if not skip_assess:

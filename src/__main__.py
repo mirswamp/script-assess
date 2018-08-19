@@ -2,6 +2,7 @@ import sys
 import os
 import os.path as osp
 import logging
+import pdb
 
 from . import swamp
 from . import cli_argparse
@@ -11,6 +12,7 @@ from . import logger
 def main():
     clargs = cli_argparse.process_cmd_line_args()
 
+    print(clargs)
     if not osp.isdir(clargs.output_dir):
         os.makedirs(clargs.output_dir, exist_ok=True)
 
@@ -21,11 +23,18 @@ def main():
 
     if clargs.platform:
         logging.info('PLATFORM: ' + clargs.platform)
-
+   
     try:
-        os.environ['SCRIPTS_DIR'] = osp.join(os.getenv('HOME'), 'scripts')
+        # os.environ['SCRIPTS_DIR'] = osp.join(os.getenv('HOME'), 'scripts')
+        os.environ['SCRIPTS_DIR'] = osp.join(os.getcwd(), 'scripts')
         os.environ['TOOL_ROOT_DIR'] = osp.realpath(clargs.tool_dir)
         os.environ['TOOL_DIR'] = os.environ['TOOL_ROOT_DIR']
+
+        if 'VMINPUTDIR' not in os.environ:
+            os.environ['VMINPUTDIR'] = osp.realpath(clargs.input_dir)
+
+        if 'VMOUTPUTDIR' not in os.environ:
+            os.environ['VMOUTPUTDIR'] = osp.realpath(clargs.output_dir)
 
         exit_code = swamp.main(osp.realpath(clargs.input_dir),
                                osp.realpath(clargs.output_dir),
@@ -33,6 +42,8 @@ def main():
                                osp.realpath(clargs.tool_dir),
                                osp.realpath(clargs.results_dir))
         sys.exit(exit_code)
+    except (Exception) as e:
+        print(e)
     finally:
         logger.shutdown()
         os.environ.pop('SCRIPTS_DIR')

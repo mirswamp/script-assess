@@ -8,6 +8,8 @@ import re
 import shlex
 import uuid
 import logging
+import zipfile
+import pdb
 
 
 if 'PermissionError' in __builtins__:
@@ -106,8 +108,12 @@ def unpack_archive(archive, dirpath, createdir=True):
                          #'whl': 'wheel unpack --dest {1} {0}'
                          '.whl': 'unzip -qq -o {0}',
     }
-
-    if any((archive.endswith(ext) for ext in cmd_template_dict)):
+    
+    if archive.endswith('.zip'):
+        with zipfile.ZipFile(archive,"r") as zip_ref:
+            zip_ref.extractall(dirpath)
+            return 0
+    elif any((archive.endswith(ext) for ext in cmd_template_dict)):
         cmd_template = [cmd_template_dict[ext] for ext in cmd_template_dict if archive.endswith(ext)][0]
         cmd = cmd_template.format(archive, dirpath)
         return run_cmd(cmd, cwd=dirpath, description='UNPACK ARCHIVE')[0]
@@ -195,19 +201,25 @@ def max_cmd_size():
     #arg_max = subprocess.check_output(['getconf', 'ARG_MAX'])
     #arg_max = int(arg_max.decode(encoding='utf-8').strip())
     # if arg_max > 131072:
-    arg_max = 131072
-    env_len = len(''.join([str(k) + ' ' + str(os.environ[k]) for k in os.environ.keys()]))
-    env_num = len(os.environ.keys())  # for null ptr
-    arg_max = arg_max - env_len - env_num * 4 - 2048  # extra caution
-    return arg_max
+
+    if platform() == 'Windows_NT':
+        return 32767
+    else:
+        arg_max = 131072
+        env_len = len(''.join([str(k) + ' ' + str(os.environ[k]) for k in os.environ.keys()]))
+        env_num = len(os.environ.keys())  # for null ptr
+        arg_max = arg_max - env_len - env_num * 4 - 2048  # extra caution
+        return arg_max
 
 
 def platform():
     if 'VMPLATNAME' in os.environ:
         return os.environ['VMPLATNAME']
-    else:
+    elif hasattr(os, 'uname'):
         platname = os.uname()
         return platname[3] if(isinstance(platname, tuple)) else platname.version
+    else:
+        return os.getenv('OS')
 
 
 def write_to_file(filename, obj):

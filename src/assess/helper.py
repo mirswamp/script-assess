@@ -44,7 +44,7 @@ class BuildArtifactsHelper:
         artifacts = dict(build_summary)
 
         artifacts['id'] = _id
-        artifacts['srcfile'] = list()
+        #artifacts['srcfile'] = list()
 
         lang_src = {'{0}-src'.format(lang) for lang in LANG_EXT_MAPPING.keys()}
         
@@ -53,7 +53,7 @@ class BuildArtifactsHelper:
             if elem.tag in lang_src:
                 fileset = BuildArtifactsHelper._get_file_list(artifacts['build-root-dir'], elem)
                 artifacts[elem.tag] = fileset
-                artifacts['srcfile'].extend(fileset)
+                #artifacts['srcfile'].extend(fileset)
 
         return artifacts
 
@@ -76,7 +76,12 @@ class BuildArtifactsHelper:
         srcfile = artifacts_xml_elem.find('srcfile')
         if srcfile:
             artifacts['dotnet-src'] = [_file.text for _file in srcfile.iter('file')]
-            artifacts['srcfile'] = artifacts['dotnet-src']
+
+            #artifacts['srcfile'] = artifacts['dotnet-src']
+
+        library = artifacts_xml_elem.find('library')
+        if library:
+            artifacts['library'] = [_file.text for _file in library.iter('file')]
 
         return artifacts
     
@@ -134,17 +139,29 @@ class BuildArtifactsHelper:
         count = 1
 
         for elem in self._build_artifacts:
-            if (elem.tag == BuildSummary.PKG_SRC_TAG) and (elem.tag in args):
-                yield BuildArtifactsHelper.get_artifacts(count,
-                                                         self._build_summary,
-                                                         elem)
 
-            if (elem.tag == 'dotnet-compile') and (elem.tag in args):
-                yield BuildArtifactsHelper.get_dotnet_artifacts(count,
-                                                                self._build_summary,
-                                                                elem)
+            artifacts = None
 
-            elif (elem.tag == 'no-build') and (elem.tag in args):
-                raise NotImplementedError
+            if elem.tag == BuildSummary.PKG_SRC_TAG:
+            #if (elem.tag == BuildSummary.PKG_SRC_TAG) and (elem.tag in args):
+                artifacts = BuildArtifactsHelper.get_artifacts(count,
+                                                               self._build_summary,
+                                                               elem)
+            elif elem.tag == 'dotnet-compile':
+            #elif (elem.tag == 'dotnet-compile') and (elem.tag in args):
+                artifacts = BuildArtifactsHelper.get_dotnet_artifacts(count,
+                                                                      self._build_summary,
+                                                                      elem)
+
+            # This is for tools like cloc/lizard that work on multiple source file formats
+            if artifacts:
+                lang_src = {'{0}-src'.format(lang) for lang in LANG_EXT_MAPPING.keys()}
+                all_src_files = list()
+                for file_type in artifacts.keys():
+                    if file_type in lang_src:
+                        all_src_files.extend(artifacts[file_type])
+
+                artifacts['srcfile'] = all_src_files
+                yield artifacts
 
             count += 1

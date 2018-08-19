@@ -297,7 +297,6 @@ class Eslint(JsTool):
                 return False
 
     def _set_tool_config_unused(self, pkg_dir):
-        # def _set_tool_config(self, pkg_dir):
 
         if self._tool_conf.get('tool-config-required', None) == 'true':
             if 'tool-config-file' in self._tool_conf:

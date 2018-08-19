@@ -6,7 +6,8 @@ from .package import Package
 
 from .. import fileutil
 
-# import pdb
+from .. import utillib
+
 
 class CsharpPkg(Package):
 
@@ -15,17 +16,25 @@ class CsharpPkg(Package):
 
     def get_build_cmd(self, build_root_dir):
         build_monitor = osp.join(os.getenv('SCRIPTS_DIR'),
-                                 'SwampBuildMonitor/bin/Debug/netcoreapp2.0/SwampBuildMonitor.dll')
+                                 'dotnet', 'SwampBuildMonitor', 'bin', 'Debug', 'netstandard2.0', 'SwampBuildMonitor.dll')
 
         self.build_monitor_outfile = osp.join(build_root_dir, 'build_artifacts.xml')
-        cmd = 'dotnet build /verbosity:normal /logger:XmlLogger,{0}\;{1}'.format(build_monitor,
-                                                                                 self.build_monitor_outfile)
+
+        executable = 'dotnet'
+        if utillib.platform() == 'Windows_NT':
+            executable = 'dotnet.exe'
+        
+        cmd = [executable,
+               'build',
+               '/verbosity:normal',
+               '/logger:XmlLogger,{0};{1}'.format(build_monitor,
+                                                  self.build_monitor_outfile)]
 
         if 'package-target-framework' in self.pkg_conf:
-            cmd += ' /property:TargetFramework={}'.format(self.pkg_conf['package-target-framework'])
+            cmd.append('/property:TargetFramework={}'.format(self.pkg_conf['package-target-framework']))
 
         if 'build-file' in self.pkg_conf:
-            cmd += ' ' + self.pkg_conf['build-file']
+            cmd.append(self.pkg_conf['build-file'])
         
         return cmd
 
