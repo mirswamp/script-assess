@@ -179,7 +179,7 @@ def run_cmd(cmd,
     return (exit_code, environ)
 
 
-def get_cmd_output(cmd):
+def get_cmd_output(cmd, cwd=None):
     try:
         output = subprocess.check_output(cmd)
         return output.decode('utf-8').strip()

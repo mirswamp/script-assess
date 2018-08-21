@@ -7,12 +7,28 @@ from .package import Package
 from .. import fileutil
 
 from .. import utillib
+from ..utillib import FileNotFoundException
+
+
 
 
 class CsharpPkg(Package):
 
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
         Package.__init__(self, pkg_conf_file, input_root_dir, build_root_dir)
+
+
+    def get_module_files(self, sln_file, pkg_build_dir):
+
+        if not osp.isfile(sln_file):
+            raise FileNotFoundException(sln_file)
+
+        with open(sln_file) as fobj:
+            cmd = ['dotnet', 'sln', sln_file, 'list']
+
+            for line in utillib.get_cmd_output(cmd, pkg_build_dir).split():
+
+
 
     def get_build_cmd(self, build_root_dir):
         build_monitor = osp.join(os.getenv('SCRIPTS_DIR'),
