@@ -1,3 +1,4 @@
+import re
 import os
 import os.path as osp
 import xml.etree.ElementTree as ET
@@ -14,19 +15,44 @@ from ..utillib import FileNotFoundException
 
 class CsharpPkg(Package):
 
+    @classmethod
+    def get_project_files(cls, pkg_build_dir, sln_file):
+        '''Input is a solutions file, and package build directory'''
+
+        if not osp.isfile(osp.join(pkg_build_dir, sln_file)):
+            raise FileNotFoundError(osp.join(pkg_build_dir, sln_file))
+
+        cmd = ['dotnet', 'sln', sln_file, 'list']
+
+        proj_regex = re.compile(r'.+[.](csproj|vbproj)$')
+        for line in utillib.get_cmd_output(cmd, pkg_build_dir).split('\n'):
+            if proj_regex.match(line) != None:
+                yield line
+
+    @classmethod
+    def get_target_framworks(cls, proj_file):
+        '''proj_file path must be absolute'''
+
+        if not osp.isfile(proj_file):
+            raise FileNotFoundError(proj_file)
+
+        root = ET.parse(proj_file).getroot()
+
+        if root.tag != 'Project':
+            raise NameError('Not a C# Project file')
+
+        for property_group in root.iter('PropertyGroup'):
+            for elem in property_group:
+                if elem.tag == 'TargetFramework':
+                    return [elem.text.strip()]
+                elif elem.tag == 'TargetFrameworks':
+                    return [tf.strip() for tf in elem.text.split(';')]
+
+
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
         Package.__init__(self, pkg_conf_file, input_root_dir, build_root_dir)
 
 
-    def get_module_files(self, sln_file, pkg_build_dir):
-
-        if not osp.isfile(sln_file):
-            raise FileNotFoundException(sln_file)
-
-        with open(sln_file) as fobj:
-            cmd = ['dotnet', 'sln', sln_file, 'list']
-
-            for line in utillib.get_cmd_output(cmd, pkg_build_dir).split():
 
 
 
