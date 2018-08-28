@@ -135,17 +135,28 @@ namespace SwampBuildMonitor
                     WriteString("command-blob", command_line);
                     WriteString("executable", DOTNET_HOST_PATH);
 
-                    command_line = command_line.Substring(DOTNET_HOST_PATH.Length);
+                    command_line = command_line.Substring(DOTNET_HOST_PATH.Length).Trim();
 
-                    Regex regex = new Regex(@"(\/[\w]+:\x22[^\x22]+\x22|\/\w+:[^\s]+|\x22[^\x22]+\x22|[^\s]+)");
-                    Regex msbuild_option = new Regex(@"/[\w]+:.+");
-
-                    //foreach (String match in args.) {
                     ArrayList flags = new ArrayList();
                     ArrayList classpath = new ArrayList();
                     ArrayList srcfiles = new ArrayList();
                     ArrayList analyzers = new ArrayList();
                     ArrayList libs = new ArrayList();
+
+                    // First argument after the dotnet.exe is the compiler.dll, add that to lib
+                    Regex regex = new Regex(@"(\/[\w]+:\x22[^\x22]+\x22|\/\w+:[^\s]+|\x22[^\x22]+\x22|[^\s]+)");
+                    Regex compiler_lib = new Regex(@"(\x22[^\x22]+[.]dll\x22|[^\s]+[.]dll)");
+
+                    if (compiler_lib.IsMatch(command_line))
+                    {
+                        Match match = compiler_lib.Match(command_line);
+
+                        libs.Add(RemoveQuotes(match.Value));
+                        command_line = command_line.Substring(match.Value.Length).Trim();
+                    }
+
+                    //Regex msbuild_option = new Regex(@"(\/[\w]+:\x22[^\x22]+\x22|\/\w+:[^\s]+)");
+                    Regex srcfile_regex = new Regex(@"(\x22.+[.](cs|vb|fs)\x22|.+[.](cs|vb|fs)$)");
 
                     foreach (String match in regex.Split(command_line))
                     {
@@ -158,35 +169,25 @@ namespace SwampBuildMonitor
                             continue;
                         }
 
-
-
-                        if (msbuild_option.IsMatch(arg)) {
-                            if (arg.StartsWith("/reference:"))
-                            {
-                                classpath.Add(Trim(arg.Substring("/reference:".Length)));
-                            }
-                            else if (arg.StartsWith("/analyzer:"))
-                            {
-                                analyzers.Add(Trim(arg.Substring("/analyzer:".Length)));
-                            }
-                            else
-                            {
-                                flags.Add(arg);
-                            }
-                        } else {
-                            if (arg.StartsWith("\"") && arg.EndsWith("\""))
-                            {
-                                arg = Trim(arg);
-                            }
-
-                            if (arg.EndsWith(".cs"))
-                            {
-                                srcfiles.Add(arg);
-                            }
-                            else if (arg.EndsWith(".dll"))
-                            {
-                                libs.Add(arg);
-                            }
+                        if (arg.StartsWith("/reference:"))
+                        {
+                            classpath.Add(Trim(arg.Substring("/reference:".Length)));
+                        }
+                        else if (arg.StartsWith("/analyzer:"))
+                        {
+                            analyzers.Add(Trim(arg.Substring("/analyzer:".Length)));
+                        }
+                        else if (arg.StartsWith("/resource:"))
+                        {
+                            flags.Add(arg);
+                        }
+                        else if (srcfile_regex.IsMatch(arg))
+                        {
+                            srcfiles.Add(Trim(arg));
+                        }
+                        else
+                        {
+                            flags.Add(arg);
                         }
                     }
 
@@ -224,6 +225,7 @@ namespace SwampBuildMonitor
                 while (ei.MoveNext())
                 {
                     DictionaryEntry curr = (DictionaryEntry)ei.Current;
+                    //Console.WriteLine("{0}: {1}", (String)curr.Key, (String)curr.Value);
                     if (((String)curr.Key).Equals("DOTNET_HOST_PATH"))
                     {
                         DOTNET_HOST_PATH = (String)curr.Value;
@@ -281,6 +283,18 @@ namespace SwampBuildMonitor
             return instr.Trim(charsToTrim);
         }
 
+        string RemoveQuotes(string str)
+        {
+            if (str.StartsWith("\"") && str.EndsWith("\""))
+            {
+                char[] charsToTrim = { '"'};
+                return str.Trim(charsToTrim);
+            }else
+            {
+                return str;
+            }
+        }
+
         /// <summary>
         /// Shutdown() is guaranteed to be called by MSBuild at the end of the build, after all 
         /// events have been raised.
@@ -293,6 +307,10 @@ namespace SwampBuildMonitor
             xmlWriter.Close();
         }
 
-        
+        void WriteConsole(String tag, String data)
+        {
+            Console.WriteLine("{0} :: {1}", tag, data);
+        }
+
     }
 }
