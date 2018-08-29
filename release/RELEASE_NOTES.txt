@@ -1,4 +1,11 @@
 -----------------------------------
+script-assess version 1.2.0 (Tue Aug 28 14:15:07 CDT 2018)
+-----------------------------------
+- Has support for dotnet assessment for packages that are (completely) dotnet core or
+- Packages that use multiple dotnet frameworks will have to specify a project file and target framework available on Linux
+- Supports for tools: [code-cracker (v1.1.0+), devskim (v0.1.10+), security-code-scan (v2.7.1)]
+
+-----------------------------------
 script-assess version 1.1.0 (Tue Feb 27 15:09:57 CST 2018)
 -----------------------------------
 
