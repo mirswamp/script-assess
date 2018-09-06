@@ -109,7 +109,7 @@ def unpack_archive(archive, dirpath, createdir=True):
                          '.whl': 'unzip -qq -o {0}',
     }
     
-    if archive.endswith('.zip'):
+    if platform() == 'Windows_NT' and archive.endswith('.zip'):
         with zipfile.ZipFile(archive,"r") as zip_ref:
             zip_ref.extractall(dirpath)
             return 0
