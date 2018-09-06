@@ -1,4 +1,9 @@
 -----------------------------------
+script-assess version 1.2.1 (Thu Sep  6 11:01:02 CDT 2018)
+-----------------------------------
+- Fixed zip failures because of python module unzip removing executable file permissions
+
+-----------------------------------
 script-assess version 1.2.0 (Tue Aug 28 14:15:07 CDT 2018)
 -----------------------------------
 - Has support for dotnet assessment for packages that are (completely) dotnet core or
