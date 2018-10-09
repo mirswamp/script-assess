@@ -46,7 +46,7 @@ def main(input_root_dir,
                 raise ValueError('Unknown goal {0}, it should be one of {1}'.format(goal,
                                                                                     swamp_goals))
 
-            install_os_dependencies.install(input_root_dir)
+            #install_os_dependencies.install(input_root_dir)
 
             if goal in swamp_goals[:3]:
                 exit_code = _build_assess_parse(goal,

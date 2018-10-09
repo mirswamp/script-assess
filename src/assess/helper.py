@@ -147,6 +147,7 @@ class BuildArtifactsHelper:
                 artifacts = BuildArtifactsHelper.get_artifacts(count,
                                                                self._build_summary,
                                                                elem)
+
             elif elem.tag == 'dotnet-compile':
             #elif (elem.tag == 'dotnet-compile') and (elem.tag in args):
                 artifacts = BuildArtifactsHelper.get_dotnet_artifacts(count,
@@ -157,11 +158,23 @@ class BuildArtifactsHelper:
             if artifacts:
                 lang_src = {'{0}-src'.format(lang) for lang in LANG_EXT_MAPPING.keys()}
                 all_src_files = list()
-                for file_type in artifacts.keys():
-                    if file_type in lang_src:
-                        all_src_files.extend(artifacts[file_type])
+
+                if elem.tag == 'dotnet-compile':
+                    proj_dir = osp.dirname(artifacts['project-file'])
+                    for file_type in artifacts.keys():
+                        if file_type in lang_src:
+                            for _file in artifacts[file_type]:
+                                if osp.isabs(_file):
+                                    all_src_files.append(_file)
+                                else:
+                                    all_src_files.append(osp.join(proj_dir, _file))
+                else:
+                    for file_type in artifacts.keys():
+                        if file_type in lang_src:
+                            all_src_files.extend(artifacts[file_type])
 
                 artifacts['srcfile'] = all_src_files
                 yield artifacts
 
             count += 1
+

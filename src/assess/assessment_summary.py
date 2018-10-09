@@ -51,7 +51,7 @@ class AssessmentSummary:
         return elem
 
     def __exit__(self, exception_type, value, traceback):
-        AssessmentSummary._add(self._root, 'end-ts', utillib.posix_epoch())
+        AssessmentSummary._add(self._root, 'stop-ts', utillib.posix_epoch())
 
         tree = ET.ElementTree(self._root)
         tree.write(self._filename, encoding='UTF-8', xml_declaration=True)
@@ -73,7 +73,7 @@ class AssessmentSummary:
             AssessmentSummary._add(assess_elem, 'stderr', osp.basename(stderr))
         AssessmentSummary._add(assess_elem, 'exit-code', str(exit_code))
         AssessmentSummary._add(assess_elem, 'start-ts', starttime)
-        AssessmentSummary._add(assess_elem, 'end-ts', endtime)
+        AssessmentSummary._add(assess_elem, 'stop-ts', endtime)
 
         cmd_elem = AssessmentSummary._add(assess_elem, 'command')
 

@@ -43,7 +43,7 @@ class LogTaskStatus():
                                                 break_on_hyphens=False)
         self.start_time = None
         self.end_time = None
-        
+
     def __enter__(self):
         self.start_time = time.time()
         return self
