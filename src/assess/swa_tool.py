@@ -31,6 +31,15 @@ class SwaToolBase:
 
     TOOL_DOT_CONF = 'tool.conf'
 
+    @classmethod
+    def get_services_conf(cls, tool_type, input_root_dir):
+        conf_file = osp.join(input_root_dir, 'services.conf')
+        if osp.isfile(conf_file):
+            services_conf = confreader.read_conf_into_dict(conf_file)
+            return {key: services_conf[key] for key in services_conf.keys() if key.startswith('tool' + tool_type)}
+        else:
+            return dict()
+    
     def __init__(self, input_root_dir, tool_root_dir):
 
         tool_conf_file = osp.join(input_root_dir, SwaToolBase.TOOL_DOT_CONF)
@@ -46,6 +55,8 @@ class SwaToolBase:
         else:
             self._tool_conf = tool_conf
 
+        self._tool_conf.update(SwaToolBase.get_services_conf(self._tool_conf['tool-type'], input_root_dir))
+
         self._tool_conf = {key: utillib.expandvar(self._tool_conf[key], self._tool_conf)
                            for key in self._tool_conf}
 
@@ -56,7 +67,7 @@ class SwaToolBase:
         self._install(input_root_dir, tool_root_dir)
 
         # logging.info('TOOL CONF: %s', self._tool_conf)
-
+    
     def _unarchive(self, input_root_dir, tool_root_dir):
 
         with LogTaskStatus('tool-unarchive'):
