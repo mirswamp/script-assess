@@ -1,0 +1,69 @@
+== Script Assess
+
+#TODO: Description
+
+=== Source Code Location
+
+* https://github.com/mirswamp/script-assess.git
+
+* Requires '/p/swamp' to build/release
+
+=== Supported Package Language and Build System Types
+#TODO: list the tools supported
+
+* Web
+* Python
+* Dotnet
+
+=== Supported Tools
+#TODO: list the tools supported
+
+* Web
+* Python
+* Dotnet
+
+=== Directory Structure
+
+The table below lists and describes the files and directories in `script-assess` repository
+
+.script-assess Directory Structure:
+[width="80%",cols="l,d",options="header",style="literal"]
+|==========================
+| File/Directory |     Description
+| Makefile | `Makefile` to make a release
+| Makefile.plats | Platform information to be included in the `Makefile`
+| mk-alias-plat | Script to make `Makefile.plats`
+| pylint.rc | configuration file for `Pylint`
+| build_monitors/ | contains files for `.NET` build monitor
+| lib/ | Python Libraries and binaries required by script assess. Currently has python libraries `yaml` and `ply`
+| release/ | Contains files related to documentation, license and release notes. Also, contains directories `in-files` and `swamp-conf`. These directories contain `build_assess_driver` and `sys-os-dependencies.conf` respectively.
+| src/ | Contains the actual source code for `script-assess`
+| util/ |  Contains old release scripts.
+|==========================
+
+
+=== Build
+There is no build step now.
+
+=== Release
+
+NOTE:  Requires '/p/swamp' to build/release
+
+* Update `release/RELEASE_NOTES.txt` with release notes
+
+* Update variable `DEST_DIR` in the `Makefile` for release directory. _This is only required to be done once when you clone the repository_.
+
+* Update variable `VERSION` in the `Makefile` for the current `X.Y.Z` version
+
+* Commit the source code to `git`
+
+* Create a tag with the command: `git tag releases/X.Y.Z`
+
+* Run commands: `git push` and `git push --tags`
+
+* run `make` or `make VERSION=<X.Y.Z>`, this will copy all the files for the release in a directory named `script-assess-X.Y.Z` in `Makefile:$DEST_DIR`
+
+
+=== Test
+
+For testing, use the standard `script-assess-test`
