@@ -1,4 +1,3 @@
-import re
 import os
 import os.path as osp
 import xml.etree.ElementTree as ET
@@ -8,8 +7,11 @@ from ..logger import LogTaskStatus
 from .build_summary import BuildSummary
 from . import common
 
+from .. import fileutil
+
 from .. import utillib
 
+import pdb
 import json
 from collections import namedtuple
 
@@ -26,7 +28,7 @@ class CsharpPkg(Package):
 
     SLN_FILES_TAG = 'sln_files'
     PROJ_FILES_TAG = 'proj_files'
-
+            
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
         Package.__init__(self, pkg_conf_file, input_root_dir, build_root_dir)
         self.build_monitor_outfiles = list()
@@ -51,7 +53,9 @@ class CsharpPkg(Package):
                                                   build_monitor_outfile)]
 
         if target_framework:
-            cmd.append('/property:TargetFramework={0}'.format(target_framework))
+            #cmd.append('/property:TargetFramework={0}'.format(target_framework))
+            cmd.append('--framework')
+            cmd.append(target_framework)
 
         if build_config:
             cmd.append('--configuration')
@@ -104,7 +108,7 @@ class CsharpPkg(Package):
                                             osp.join(pkg_build_dir, osp.dirname(sln_file)),
                                             build_id)
                             build_id = build_id + 1
-
+                
             else:
                 # When there are no sln files, but projects
                 dotnet_projects = build_settings[CsharpPkg.PROJ_FILES_TAG]
@@ -120,7 +124,7 @@ class CsharpPkg(Package):
                                                                 bm_outfile,
                                                                 dotnet_projects[proj].get('framework'),
                                                                 dotnet_projects[proj].get('configuration'))
-
+                        
                         yield BuildInfo(build_cmd, pkg_build_dir, build_id)
                         build_id = build_id + 1
 
@@ -150,7 +154,7 @@ class CsharpPkg(Package):
                     if proj_file is not None and proj_file.text not in compiled_projects:
                         build_artifacts.append(dc_elem)
                         compiled_projects.add(proj_file.text)
-
+                    
         build_summary.add_to_root(build_artifacts)
 
     def _build(self, build_root_dir, build_summary):
@@ -192,5 +196,5 @@ class CsharpPkg(Package):
                                                     osp.relpath(errfile, build_root_dir))
 
             self.add_build_artifacts(build_summary, build_root_dir, pkg_build_dir)
-
+                
             return (exit_code, BuildSummary.FILENAME)
