@@ -73,6 +73,13 @@ BINARY_SHARE_PLATS=	\
 	rhel-6.9-32=rhel-6.8-32		\
 	rhel-6.9-64=rhel-6.8-64		\
 	\
+	centos-6.10-32=centos-6.9-32		\
+	centos-6.10-64=centos-6.9-64		\
+	scientific-6.10-32=scientific-6.9-32		\
+	scientific-6.10-64=scientific-6.9-64		\
+	rhel-6.10-32=rhel-6.9-32		\
+	rhel-6.10-64=rhel-6.9-64		\
+	\
 	scientific-5.11-32=centos-5.11-32		\
 	scientific-5.11-64=centos-5.11-64		\
 	rhel-5.11-32=centos-5.11-32		\
@@ -101,7 +108,17 @@ BINARY_SHARE_PLATS=	\
 	rhel-7.7-64=rhel-7.6-64		\
 	scientific-7.7-64=scientific-7.6-64		\
 	\
+	centos-7.8-64=centos-7.7-64		\
+	rhel-7.8-64=rhel-7.7-64		\
+	scientific-7.8-64=scientific-7.7-64		\
+	\
+	centos-7.9-64=centos-7.8-64		\
+	rhel-7.9-64=rhel-7.8-64		\
+	scientific-7.9-64=scientific-7.8-64		\
+	\
 	fedora-25-64=fedora-24-64		\
+	\
+	ubuntu-18.04-64=ubuntu-16.04-64		\
 
 ## BLANK ABOVE
 
@@ -137,6 +154,13 @@ HYPERVISOR_PLATS=	\
 	test-rhel-6.9-64=rhel-6.9-64		\
 	test-scientific-6.9-64=scientific-6.9-64		\
 	test-scientific-6.9-32=scientific-6.9-32		\
+	\
+	test-centos-6.10-32=centos-6.10-32		\
+	test-centos-6.10-64=centos-6.10-64		\
+	test-rhel-6.10-32=rhel-6.10-32		\
+	test-rhel-6.10-64=rhel-6.10-64		\
+	test-scientific-6.10-64=scientific-6.10-64		\
+	test-scientific-6.10-32=scientific-6.10-32		\
 	\
 	test-centos-5.11-32=centos-5.11-32		\
 	test-centos-5.11-64=centos-5.11-64		\
@@ -187,6 +211,14 @@ HYPERVISOR_PLATS=	\
 	test-centos-7.7-64=centos-7.7-64		\
 	test-rhel-7.7-64=rhel-7.7-64			\
 	test-scientific-7.7-64=scientific-7.7-64	\
+	\
+	test-centos-7.8-64=centos-7.8-64		\
+	test-rhel-7.8-64=rhel-7.8-64			\
+	test-scientific-7.8-64=scientific-7.8-64	\
+	\
+	test-centos-7.9-64=centos-7.9-64		\
+	test-rhel-7.9-64=rhel-7.9-64			\
+	test-scientific-7.9-64=scientific-7.9-64	\
 
 ## BLANK ABOVE
 
