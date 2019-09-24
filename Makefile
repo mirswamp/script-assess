@@ -6,7 +6,10 @@ NAME_VERSION = $(DEST_DIR)/$(NAME)-$(VERSION)
 TARBALL = $(NAME_VERSION).tar
 
 P_SWAMP=/p/swamp
+
 DEST_DIR = $(P_SWAMP)/home/vamshi/mnt/v1/releases
+DEST_DIR = tmp
+
 SWAMP_FW=$(P_SWAMP)/frameworks
 SWAMP_FW_PY=$(SWAMP_FW)/python
 SWAMP_FW_PHP=$(SWAMP_FW)/php
@@ -23,10 +26,27 @@ UPDATE_PLATFORM=$(SWAMP_FW)/platform/update-platform
 MAKE_MD5SUM = find -P $(NAME_VERSION) -type f -not -name md5sum \
     -exec md5sum '{}' '+' > $(NAME_VERSION)/md5sum
 
-NODE_64_FULLPATH = $(shell readlink -e $(SWAMP_FW_NODE)/noarch/node-latest-x64)
-NODE_64_BINARY = $(shell basename $(NODE_64_FULLPATH))
-NODE_32_FULLPATH = $(shell readlink -e $(SWAMP_FW_NODE)/noarch/node-latest-x86)
-NODE_32_BINARY = $(shell basename $(NODE_32_FULLPATH))
+
+#NODE_64_FULLPATH = $(shell readlink -e $(SWAMP_FW_NODE)/noarch/node-latest-x64)
+#NODE_64_BINARY = $(shell basename $(NODE_64_FULLPATH))
+#NODE_32_FULLPATH = $(shell readlink -e $(SWAMP_FW_NODE)/noarch/node-latest-x86)
+#NODE_32_BINARY = $(shell basename $(NODE_32_FULLPATH))
+
+## From now one, the framework selects which version to use,
+## so changes to the framework node.js do not change the
+## assessment framework inadvertently
+
+NODE_MAJOR=8
+NODE_VERSION=8.16.1
+
+NODE_DIR=$(SWAMP_FW_NODE)/node-$(NODE_MAJOR)
+NODE_VNAME_PFX=node-v$(NODE_VERSION)-linux
+
+NODE_64_BINARY=$(NODE_VNAME_PFX)-x64.tar.gz
+NODE_32_BINARY=$(NODE_VNAME_PFX)-x86.tar.gz
+
+NODE_64_FULLPATH = $(NODE_DIR)/$(NODE_64_BINARY)
+NODE_32_FULLPATH = $(NODE_DIR)/$(NODE_32_BINARY)
 
 MK_ALIAS_PLAT=$(PWD)/mk-alias-plat
 
