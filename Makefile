@@ -10,15 +10,27 @@ P_SWAMP=/p/swamp
 DEST_DIR = $(P_SWAMP)/home/vamshi/mnt/v1/releases
 DEST_DIR = tmp
 
+
 SWAMP_FW=$(P_SWAMP)/frameworks
+
 SWAMP_FW_PY=$(SWAMP_FW)/python
-SWAMP_FW_PHP=$(SWAMP_FW)/php
-SWAMP_FW_NODE=$(SWAMP_FW)/node.js
+
 SWAMP_FW_WEB=$(SWAMP_FW)/web
+SWAMP_FW_PHP=$(SWAMP_FW_WEB)/php
+SWAMP_FW_NODE=$(SWAMP_FW_WEB)/node.js
+SWAMP_FW_COMPOSER=$(SWAMP_FW_WEB)/composer
 
 ## location of python binaries
 PYTHON_2_BINARIES=$(SWAMP_FW_PY)/python-2-arch
 PYTHON_3_BINARIES=$(SWAMP_FW_PY)/python-3-arch
+
+## name of python binary to insert
+PYTHON_2_BINARY=python-2-bin.tar.gz
+PYTHON_3_BINARY=python-3-bin.tar.gz
+
+## where it is
+PYTHON_2_FULLPATH=$(PYTHON_2_BINARIES)/$(PLAT)/$(PYTHON_2_BINARY)
+PYTHON_3_FULLPATH=$(PYTHON_3_BINARIES)/$(PLAT)/$(PYTHON_3_BINARY)
 
 ## Platform update tool
 UPDATE_PLATFORM=$(SWAMP_FW)/platform/update-platform
@@ -27,17 +39,18 @@ MAKE_MD5SUM = find -P $(NAME_VERSION) -type f -not -name md5sum \
     -exec md5sum '{}' '+' > $(NAME_VERSION)/md5sum
 
 
-#NODE_64_FULLPATH = $(shell readlink -e $(SWAMP_FW_NODE)/noarch/node-latest-x64)
-#NODE_64_BINARY = $(shell basename $(NODE_64_FULLPATH))
-#NODE_32_FULLPATH = $(shell readlink -e $(SWAMP_FW_NODE)/noarch/node-latest-x86)
-#NODE_32_BINARY = $(shell basename $(NODE_32_FULLPATH))
-
 ## From now one, the framework selects which version to use,
 ## so changes to the framework node.js do not change the
 ## assessment framework inadvertently
 
+
+NODE_MAJOR=10
+NODE_VERSION=10.16.3
+NODE_32=false
+
 NODE_MAJOR=8
 NODE_VERSION=8.16.1
+NODE_32=true
 
 NODE_DIR=$(SWAMP_FW_NODE)/node-$(NODE_MAJOR)
 NODE_VNAME_PFX=node-v$(NODE_VERSION)-linux
@@ -47,6 +60,20 @@ NODE_32_BINARY=$(NODE_VNAME_PFX)-x86.tar.gz
 
 NODE_64_FULLPATH = $(NODE_DIR)/$(NODE_64_BINARY)
 NODE_32_FULLPATH = $(NODE_DIR)/$(NODE_32_BINARY)
+
+## And now composer is versioned as well.
+
+## new version I am testing
+COMPOSER_VER=1.9.0
+## version since 2017
+COMPOSER_VER=1.1.0
+
+COMPOSER_VNAME=composer-$(COMPOSER_VER)
+
+COMPOSER_PHAR=$(SWAMP_FW_COMPOSER)/$(COMPOSER_VNAME)/composer.phar
+
+## and the php initialization is hardwired too, no versions yet
+PHP_INI=$(SWAMP_FW_PHP)/php.ini
 
 MK_ALIAS_PLAT=$(PWD)/mk-alias-plat
 
@@ -60,7 +87,7 @@ tarball: $(TARBALL)
 
 $(TARBALL): $(NAME_VERSION)
 	$(MAKE_MD5SUM)
-# tar -cf $(TARBALL) $(NAME_VERSION)
+#	tar -cf $(TARBALL) $(NAME_VERSION)
 
 $(NAME_VERSION): build_monitors/* lib/* src/* ./release/* 
 	$(MAKE) base_plat normal_plats alias_plats
@@ -95,14 +122,22 @@ base_plat base-plat:
 	@: > $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/version/__init__.py
 	@echo $(VERSION) > $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/version/version.txt
 	@cd $(NAME_VERSION)/$(BASE_PLAT)/in-files && tar cz -f scripts.tar.gz scripts && rm -rf scripts
-	@cp -r -p $(NODE_64_FULLPATH) $(NAME_VERSION)/$(BASE_PLAT)/in-files
-	@cp -r -p $(NODE_32_FULLPATH) $(NAME_VERSION)/$(BASE_PLAT)/in-files
 
-	@sed --in-place "s@NODE_32_BINARY@$(NODE_32_BINARY)@" $(NAME_VERSION)/$(BASE_PLAT)/in-files/build_assess_driver
+	@cp -r -p $(NODE_64_FULLPATH) $(NAME_VERSION)/$(BASE_PLAT)/in-files
+
+ifeq ($(NODE_32),true)
+	@cp -r -p $(NODE_32_FULLPATH) $(NAME_VERSION)/$(BASE_PLAT)/in-files
+endif
+
 	@sed --in-place "s@NODE_64_BINARY@$(NODE_64_BINARY)@" $(NAME_VERSION)/$(BASE_PLAT)/in-files/build_assess_driver
 
-	@cp -r -p $(SWAMP_FW_PHP)/noarch/composer.phar $(NAME_VERSION)/$(BASE_PLAT)/in-files
-	@cp -r -p $(SWAMP_FW_PHP)/noarch/php.ini $(NAME_VERSION)/$(BASE_PLAT)/in-files
+ifeq ($(NODE_32),true)
+	@sed --in-place "s@NODE_32_BINARY@$(NODE_32_BINARY)@" $(NAME_VERSION)/$(BASE_PLAT)/in-files/build_assess_driver
+endif
+
+	@cp -r -p $(COMPOSER_PHAR) $(NAME_VERSION)/$(BASE_PLAT)/in-files
+
+	@cp -r -p $(PHP_INI) $(NAME_VERSION)/$(BASE_PLAT)/in-files
 
 	@$(UPDATE_PLATFORM) --framework python --dir $(NAME_VERSION)/$(BASE_PLAT)/in-files
 
@@ -110,10 +145,10 @@ base_plat base-plat:
 ifneq ($(BASE_PLAT),noarch)
 ifneq ($(BASE_PLAT),common)
 	@echo '	'python2
-	@cp -p $(PYTHON_2_BINARIES)/$(BASE_PLAT)/python-2-bin.tar.gz \
+	@cp -p $(PYTHON_2_FULLPATH)	\
 		$(NAME_VERSION)/$(BASE_PLAT)/in-files
 	@echo '	'python3
-	@cp -p $(PYTHON_3_BINARIES)/$(BASE_PLAT)/python-3-bin.tar.gz \
+	@cp -p $(PYTHON_3_FULLPATH)	\
 		$(NAME_VERSION)/$(BASE_PLAT)/in-files
 endif
 endif
@@ -135,9 +170,9 @@ normal_plats normal-plats:
 		echo '	'swamp-conf; \
 		ln -s ../$(BASE_PLAT)/swamp-conf --target-directory=$(NAME_VERSION)/$(PLAT);\
 		echo '	'python2; \
-		cp -p $(PYTHON_2_BINARIES)/$(PLAT)/python-2-bin.tar.gz $(NAME_VERSION)/$(PLAT)/in-files;\
+		cp -p $(PYTHON_2_FULLPATH) $(NAME_VERSION)/$(PLAT)/in-files;\
 		echo '	'python3; \
-		cp -p $(PYTHON_3_BINARIES)/$(PLAT)/python-3-bin.tar.gz $(NAME_VERSION)/$(PLAT)/in-files;\
+		cp -p $(PYTHON_3_FULLPATH) $(NAME_VERSION)/$(PLAT)/in-files;\
 	)
 
 
