@@ -1,0 +1,8 @@
+/home/bolo/build/pkg1/SwampBuildMonitor/SwampBuildMonitor/bin/Debug/netstandard2.0/SwampBuildMonitor.deps.json
+/home/bolo/build/pkg1/SwampBuildMonitor/SwampBuildMonitor/bin/Debug/netstandard2.0/SwampBuildMonitor.dll
+/home/bolo/build/pkg1/SwampBuildMonitor/SwampBuildMonitor/bin/Debug/netstandard2.0/SwampBuildMonitor.pdb
+/home/bolo/build/pkg1/SwampBuildMonitor/SwampBuildMonitor/obj/Debug/netstandard2.0/SwampBuildMonitor.csproj.CoreCompileInputs.cache
+/home/bolo/build/pkg1/SwampBuildMonitor/SwampBuildMonitor/obj/Debug/netstandard2.0/SwampBuildMonitor.AssemblyInfoInputs.cache
+/home/bolo/build/pkg1/SwampBuildMonitor/SwampBuildMonitor/obj/Debug/netstandard2.0/SwampBuildMonitor.AssemblyInfo.cs
+/home/bolo/build/pkg1/SwampBuildMonitor/SwampBuildMonitor/obj/Debug/netstandard2.0/SwampBuildMonitor.dll
+/home/bolo/build/pkg1/SwampBuildMonitor/SwampBuildMonitor/obj/Debug/netstandard2.0/SwampBuildMonitor.pdb
