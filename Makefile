@@ -44,10 +44,12 @@ MAKE_MD5SUM = find -P $(NAME_VERSION) -type f -not -name md5sum \
 ## assessment framework inadvertently
 
 
+## current LTS
 NODE_MAJOR=10
 NODE_VERSION=10.16.3
 NODE_32=false
 
+## old LTS
 NODE_MAJOR=8
 NODE_VERSION=8.16.1
 NODE_32=true
@@ -63,9 +65,10 @@ NODE_32_FULLPATH = $(NODE_DIR)/$(NODE_32_BINARY)
 
 ## And now composer is versioned as well.
 
-## new version I am testing
+## new version I am testing in 2019
 COMPOSER_VER=1.9.0
-## version since 2017
+
+## version in use since Jan 2017
 COMPOSER_VER=1.1.0
 
 COMPOSER_VNAME=composer-$(COMPOSER_VER)
@@ -114,7 +117,10 @@ base_plat base-plat:
 
 
 	@mkdir -p $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/$(SCRIPTS_DIR_NAME)
-	@cp -r -p build_monitors/* $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/
+
+	@tar cf - -C build_monitors . | tar xfp - -C $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/
+	@tar cf - -C build_monitors_obj . | tar xfp - -C $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/
+
 	@cp -r -p lib/* $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib
 	@cp -r -p $(SWAMP_FW_WEB)/lib/* $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib
 	@cp -r -p src/* $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/$(SCRIPTS_DIR_NAME)
