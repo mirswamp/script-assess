@@ -2,7 +2,8 @@ NAME = script-assess
 SCRIPTS_DIR_NAME = script_assess
 VERSION = $(shell git tag | sort -V | tail -n 1)
 
-NAME_VERSION = $(DEST_DIR)/$(NAME)-$(VERSION)
+DIR_NAME_VERSION = $(NAME)-$(VERSION)
+NAME_VERSION = $(DEST_DIR)/$(DIR_NAME_VERSION)
 TARBALL = $(NAME_VERSION).tar
 
 P_SWAMP=/p/swamp
@@ -63,13 +64,14 @@ NODE_32_BINARY=$(NODE_VNAME_PFX)-x86.tar.gz
 NODE_64_FULLPATH = $(NODE_DIR)/$(NODE_64_BINARY)
 NODE_32_FULLPATH = $(NODE_DIR)/$(NODE_32_BINARY)
 
-## And now composer is versioned as well.
 
-## new version I am testing in 2019
-COMPOSER_VER=1.9.0
+## And now composer is versioned as well.
 
 ## version in use since Jan 2017
 COMPOSER_VER=1.1.0
+
+## new version I am testing in 2019
+COMPOSER_VER=1.9.0
 
 COMPOSER_VNAME=composer-$(COMPOSER_VER)
 
@@ -88,9 +90,22 @@ all: tarball
 
 tarball: $(TARBALL)
 
-$(TARBALL): $(NAME_VERSION)
-	$(MAKE_MD5SUM)
-#	tar -cf $(TARBALL) $(NAME_VERSION)
+redo-tarball:
+	(cd $(DEST_DIR) ; tar cf $(DIR_NAME_VERSION).tar $(DIR_NAME_VERSION))
+
+$(TARBALL): $(NAME_VERSION) $(NAME_VERSION)/md5sum
+	(cd $(DEST_DIR) ; tar cf $(DIR_NAME_VERSION).tar $(DIR_NAME_VERSION))
+
+redo-md5sum:
+	rm -f $(NAME_VERSION)/md5sum
+	$(MAKE) md5sum
+
+md5sum: $(NAME_VERSION)/md5sum
+
+$(NAME_VERSION)/md5sum:
+	(cd $(NAME_VERSION) ; find -P . -type f -not -name md5sum \
+		-exec md5sum '{}' '+' >md5sum)
+
 
 $(NAME_VERSION): build_monitors/* lib/* src/* ./release/* 
 	$(MAKE) base_plat normal_plats alias_plats
