@@ -1,4 +1,10 @@
 -----------------------------------
+script-assess version 1.3.5 (Wed Oct 09 15:00:00 CDT 2019)
+-----------------------------------
+- new modular run.sh to allow further changes and improve reliability
+- variable exports changed for run.sh changes
+
+-----------------------------------
 script-assess version 1.3.4 (Wed Oct 02 15:00:00 CDT 2019)
 -----------------------------------
 - locate & install missing dotnet listener object files
