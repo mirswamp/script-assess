@@ -34,6 +34,10 @@ for argument in $options; do
     esac
 done
 
+## export these for subsequent use
+export VMINPUTDIR
+export VMOUTPUTDIR
+
 ## XXX can also be $HOME
 export SWAMP_DIR=/opt/swamp-base
 
