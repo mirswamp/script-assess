@@ -10,6 +10,7 @@ import uuid
 import logging
 import zipfile
 import pdb
+import pkgutil
 
 
 if 'PermissionError' in __builtins__:
@@ -315,3 +316,12 @@ def ordered_list(_list):
             new_list.append(item)
 
     return new_list
+
+def get_framework_version():
+    
+    version = pkgutil.get_data('version', 'version.txt')
+    if version:
+        return str(version, encoding='utf-8').strip('\n')
+    else:
+        return 'v.?.?.?'
+

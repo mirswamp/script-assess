@@ -34,6 +34,8 @@ class BuildSummary:
         BuildSummary._add(self._root, 'platform', utillib.platform())
         BuildSummary._add(self._root, 'uuid', utillib.get_uuid())
         BuildSummary._add(self._root, 'package-dir', pkg_conf['package-dir'])
+        BuildSummary._add(self._root, 'build-fw', 'script-assess')
+        BuildSummary._add(self._root, 'build-fw-version', utillib.get_framework_version())
 
     def __enter__(self):
         return self

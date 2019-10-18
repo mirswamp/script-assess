@@ -14,6 +14,9 @@ class AssessmentSummary:
 
         self._filename = filename
 
+	## keep names same as needed
+        build_summary_obj = build_artifacts_helper
+
         self._root = ET.Element('assessment-summary')
         AssessmentSummary._add(self._root, 'assessment-summary-uuid', str(uuid.uuid4()))
 
@@ -33,6 +36,13 @@ class AssessmentSummary:
         if 'build-summary-uuid' in build_artifacts_helper:
             AssessmentSummary._add(self._root, 'build-summary-uuid',
                                    build_artifacts_helper['build-summary-uuid'])
+
+        if 'build-fw' in build_summary_obj:
+            AssessmentSummary._add(self._root, 'assess-fw', build_summary_obj['build-fw'])
+
+        if 'build-fw-version' in build_summary_obj:
+            AssessmentSummary._add(self._root, 'assess-fw-version', build_summary_obj['build-fw-version'])
+
 
         AssessmentSummary._add(self._root, 'tool-type', tool_conf['tool-type'])
         AssessmentSummary._add(self._root, 'tool-version', tool_conf['tool-version'])
