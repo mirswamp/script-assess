@@ -20,9 +20,9 @@ tokens = (
 
 t_QSTRING = r'[\"][^\"]+[\"]'
 # t_PARAM = r'<[a-zA-Z][a-zA-Z0-9_-]*(?:[%][^>]+)?>'
-t_PARAM = r'<[a-zA-Z][a-zA-Z0-9]*(?:[_-]?[a-zA-Z0-9]+)*(?:[%][^>]+)?>'
+t_PARAM = r'<[a-zA-Z][a-zA-Z0-9-_]*(?:(?:%|\?\+|\?-)[^>]+)?>'
 t_SEPERATER = r'[:=/]'
-t_OPTIONNAME = r'(-{1,2}|[+])[a-zA-Z][a-zA-Z0-9]*(?:[_.-]?[a-zA-Z0-9]+)*'
+t_OPTIONNAME = r'(-{1,2}|[+])[a-zA-Z][a-zA-Z0-9-_]*'
 t_STRING = r'[\w\d\.-]+'
 t_ignore = ' \t\v\r'  # whitespace
 
@@ -136,8 +136,8 @@ def p_optionarg(p):
 
 def p_param(p):
     '''param : PARAM'''
-    name, seperator = _get_param(p[1])
-    p[0] = ('parameter', name, seperator)
+    name, op, text = _get_param(p[1])
+    p[0] = ('parameter', name, op, text)
 
 
 def p_empty(_):
@@ -157,9 +157,11 @@ def _get_param(param):
         raise Exception('not a valid parameter' + param)
 
     name = match.group('name')
-    sep = match.group('sep') if(match.group('sep') != None) else None
+    op = match.group('op')
+    text = match.group('text') if(match.group('text') != None) else None
 
-    return (name, sep)
+    return (name, op, text)
+
 
 parser = yacc.yacc(debug=True,
                    tabmodule='gencmd_parsetab',
@@ -190,6 +192,7 @@ def process_obj(obj, symbol_table):
 
 
 def _add_sep(sep, _list):
+    # val[0], sep, val[1], sep, val[2]...
 
     if len(_list) > 0:
         for l in _list[:-1]:
@@ -200,29 +203,50 @@ def _add_sep(sep, _list):
 
 
 def process_parameter(obj, symbol_table):
-    '''obj: is a tuple (symbol_name, seperator)'''
+    '''obj: is a tuple (symbol_name, operator, text)'''
 
-    name = obj[0]
-    sep = obj[1]
+    name, op, text = obj
 
     if name not in symbol_table:
         return None
     else:
         value = symbol_table[name]
 
-    if isinstance(value, str):
-        return value
+    if op is None:
+        if isinstance(value, str):
+            return value
+        elif isinstance(value, list):
+            param = '<' + name + '>'
+            logging.warning("WARNING: Deprecated functionality - expanding param {0}".format(param)
+                    + " should be a string not a list")
+            return value[0]
+        else:
+            raise Exception('value is not a string when op is None')
+    elif op == '%':
+        if not isinstance(value, list):
+            param = '<' + name + op + text + '>'
+            logging.warning("WARNING: Deprecated functionality - expanding param {0}".format(param)
+                    + " should be a list not a string")
+            return value
 
-    # if there is a seperator
-    if sep is None:
-        # value is a list
-        return value[0]
-    elif sep.isspace():
-        return value
-    elif sep.strip() == sep:
-        return sep.join(value)
+        if text.isspace():
+            if text != ' ':
+                raise Exception('text is not as expected')
+            return value
+        elif text.strip() == text:
+            return text.join(value)
+        else:
+            return [val for val in _add_sep(text.strip(), value)]
+    elif op == '?+' or op == '?-':
+        wantTrueValue = op == '?+'
+        isTrueValue = utillib.string_to_bool(value)
+
+        if not (wantTrueValue ^ isTrueValue):
+            return text
+        else:
+            return None
     else:
-        return [val for val in _add_sep(sep.strip(), value)]
+        raise Exception('op is not recognized')
 
 
 def process_option(obj, symbol_table):
@@ -284,7 +308,7 @@ def gencmd(str_or_file, symbol_table):
         raise Exception('AST not correct')
 
 
-GenCmdVar = namedtuple('GenCmdVar', ['name', 'sep'])
+GenCmdVar = namedtuple('GenCmdVar', ['name', 'text'])
 
 
 def get_cmd_var_list(filename):
@@ -297,7 +321,7 @@ def get_cmd_var_list(filename):
             # if m is not None and 'name' in m.groupdict():
             if m and 'name' in m.groupdict():
                 param_list.append((GenCmdVar(m.groupdict()['name'],
-                                             m.groupdict().get('sep', None))))
+                                             m.groupdict().get('text', None))))
     return param_list
 
 

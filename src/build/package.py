@@ -86,9 +86,14 @@ class Package(metaclass=ABCMeta):
                                                      env=self._get_env(config_dir),
                                                      description="CONFIGURE")
 
+                if isinstance(config_cmd, str):
+                    config_cmd_arr = ['/bin/sh', '-c', config_cmd]
+                else:
+                    config_cmd_arr = config_cmd
+
                 build_summary.add_command('configure',
-                                          config_cmd,
-                                          [],
+                                          config_cmd_arr[0],
+                                          config_cmd_arr,
                                           exit_code,
                                           environ,
                                           config_dir,
@@ -133,8 +138,13 @@ class Package(metaclass=ABCMeta):
                                                  env=self._get_env(pkg_build_dir),
                                                  description='BUILD')
 
-            build_summary.add_command('build', build_cmd[0],
-                                      build_cmd[1:], exit_code, environ,
+            if isinstance(build_cmd, str):
+                build_cmd_arr = ['/bin/sh', '-c', build_cmd]
+            else:
+                build_cmd_arr = build_cmd
+
+            build_summary.add_command('build', build_cmd_arr[0],
+                                      build_cmd_arr, exit_code, environ,
                                       environ['PWD'],
                                       outfile, errfile)
 

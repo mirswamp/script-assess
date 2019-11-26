@@ -182,7 +182,7 @@ class CsharpPkg(Package):
                                                      description='BUILD')
 
                 build_summary.add_command('build', build_info.build_cmd[0],
-                                          build_info.build_cmd[1:], exit_code, environ,
+                                          build_info.build_cmd, exit_code, environ,
                                           environ['PWD'],
                                           outfile, errfile)
 

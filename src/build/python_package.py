@@ -117,8 +117,10 @@ class PythonPkg(Package, metaclass=ABCMeta):
                                                      env=self._get_env(self.pkg_dir),
                                                      description='PIP INSTALL')
 
-                build_summary.add_command('pip-install', pip_cmd,
-                                          [], exit_code, environ,
+                pip_cmd_arr = ['/bin/sh', '-c', pip_cmd]
+
+                build_summary.add_command('pip-install', pip_cmd_arr[0],
+                                          pip_cmd_arr, exit_code, environ,
                                           environ['PWD'],
                                           outfile, errfile)
 

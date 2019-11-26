@@ -111,6 +111,13 @@ class SwaToolBase:
                                                  "Command '{0}' return {1}".format(install_cmd,
                                                                                    exit_code))
 
+            if 'tool-flow-typed' in self._tool_conf \
+                    and utillib.string_to_bool(self._tool_conf['tool-flow-typed']) \
+                    and 'tool-flow-typed-executable' in self._tool_conf:
+                self._tool_conf['tool-flow-typed-executable'] = osp.normpath(osp.join(tool_root_dir,
+                                                                                self._tool_conf['tool-dir'],
+                                                                                self._tool_conf['tool-flow-typed-executable']))
+
     def _validate_exit_code(self, exit_code):
         if 'valid-exit-status' in self._tool_conf:
             valid_exit_codes = [int(ec.strip())
@@ -201,7 +208,7 @@ class SwaTool(SwaToolBase):
             for key in package_artifacts.keys():
                 artifacts.pop(key)
 
-            tool_target_filetypes_dict = {var.name: var.sep for var in tool_target_filetypes}
+            tool_target_filetypes_dict = {var.name: var.text for var in tool_target_filetypes}
 
             id_count = 1
             for file_type in package_artifacts.keys():
@@ -304,23 +311,14 @@ class SwaTool(SwaToolBase):
                     assessment_report = artifacts['assessment-report'] \
                                         if outfile != artifacts['assessment-report'] else outfile
 
-                    # write assessment summary file
-                    # return pass, fail, assessment_summary
-                    assessment_summary.add_report(artifacts['build-artifact-id'],
-                                                  assess_cmd,
-                                                  exit_code,
-                                                  environ,
-                                                  assessment_working_dir,
-                                                  assessment_report,
-                                                  outfile,
-                                                  errfile,
-                                                  start_time,
-                                                  utillib.posix_epoch())
-                    
+                    end_time = utillib.posix_epoch()
+
                     if self._validate_exit_code(exit_code):
                         passed += 1
+                        execution_successful = True
                     else:
                         failed += 1
+                        execution_successful = False
                         if ('tool-report-exit-code' in self._tool_conf) and \
                            (exit_code == int(self._tool_conf['tool-report-exit-code'])):
 
@@ -328,6 +326,19 @@ class SwaTool(SwaToolBase):
                                 error_msgs += SwaTool._read_err_msg(outfile,
                                                                     self._tool_conf['tool-report-exit-code-msg'])
 
+                    # write assessment summary file
+                    # return pass, fail, assessment_summary
+                    assessment_summary.add_report(artifacts['build-artifact-id'],
+                                                  assess_cmd,
+                                                  exit_code,
+                                                  execution_successful,
+                                                  environ,
+                                                  assessment_working_dir,
+                                                  assessment_report,
+                                                  outfile,
+                                                  errfile,
+                                                  start_time,
+                                                  end_time)
                 else:
                     logging.info('ASSESSMENT SKIP (NO SOURCE FILES FOUND)')
 

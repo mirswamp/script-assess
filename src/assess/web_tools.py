@@ -82,7 +82,7 @@ class Flow(SwaToolBase):
                 os.rename(config_file, '{0}-original'.format(config_file))
                 task_msg = 'Disabling local configuration file {0}/{1}'.format(osp.basename(assessment_working_dir),
                                                                                osp.basename(config_file))
-            
+
             content = '''[include]\n\n[libs]\n\n[options]\n\n[ignore]\n<PROJECT_ROOT>/node_modules\n'''
             if self.build_artifacts_helper['package-exclude-paths']:
                 # TODO: These may have to converted into ocaml regex
@@ -111,6 +111,64 @@ class Flow(SwaToolBase):
             status_dot_out.update_task_status(0,
                                               msg_inline='using-swamp-config',
                                               msg_indetail=task_msg)
+
+    def _install_flowtyped(self, artifacts, assessment_working_dir, results_root_dir, assessment_summary):
+        with LogTaskStatus('flow-typed') as status_dot_out:
+
+            # TODO: Only read run_conf once
+            run_conf = confreader.read_conf_into_dict(
+                osp.join(self.input_root_dir, 'run.conf'))
+
+            if 'internet-inaccessible' in run_conf \
+                    and utillib.string_to_bool(run_conf['internet-inaccessible']):
+                logging.info('FLOW_TYPED: Internet is inaccessible, skipping flow-typed')
+                status_dot_out.skip_task(msg_inline='internet inaccessible')
+            elif (not utillib.string_to_bool(artifacts['tool-flow-typed'])) \
+                    or 'tool-flow-typed-executable' not in artifacts \
+                    or 'tool-flow-typed-invoke' not in artifacts:
+                logging.info('FLOW_TYPED: flow-typed is disabled, skipping')
+                status_dot_out.skip_task(msg_inline='disabled')
+            elif not osp.isfile(osp.join(assessment_working_dir, 'package.json')):
+                logging.info('FLOW_TYPED: package.json does not exist, skipping')
+                status_dot_out.skip_task(msg_inline='package.json missing')
+            elif not osp.isdir(osp.join(assessment_working_dir, 'node_modules')):
+                logging.info('FLOW_TYPED: node_modules does not exist in the package, skipping')
+                status_dot_out.skip_task(msg_inline='node_modules missing')
+            else:
+                flowtyped_start_time = utillib.posix_epoch()
+                flowtyped_cmd = gencmd.gencmd(osp.join(self.input_root_dir,
+                                                       artifacts['tool-flow-typed-invoke']),
+                                              artifacts)
+                flowtyped_outfile = osp.join(results_root_dir,
+                                             'flow_typed_stdout{0}.out'.format(artifacts['id']))
+                flowtyped_errfile = osp.join(results_root_dir,
+                                             'flow_typed_stderr{0}.out'.format(artifacts['id']))
+
+                flowtyped_exit_code, flowtyped_environ = utillib.run_cmd(flowtyped_cmd,
+                                                                         outfile=flowtyped_outfile,
+                                                                         errfile=flowtyped_errfile,
+                                                                         cwd=assessment_working_dir,
+                                                                         env=self._get_env(),
+                                                                         description='FLOW_TYPED')
+
+                if flowtyped_exit_code == 0:
+                    ft_execution_successful = True
+                else:
+                    ft_execution_successful = False
+
+                assessment_summary.add_non_assessment(artifacts['id'],
+                                                      flowtyped_cmd,
+                                                      flowtyped_exit_code,
+                                                      ft_execution_successful,
+                                                      flowtyped_environ,
+                                                      assessment_working_dir,
+                                                      None,
+                                                      flowtyped_outfile,
+                                                      flowtyped_errfile,
+                                                      flowtyped_start_time,
+                                                      utillib.posix_epoch())
+                
+                status_dot_out.update_task_status(flowtyped_exit_code)
 
     def assess(self, build_summary_file, results_root_dir):
 
@@ -151,10 +209,13 @@ class Flow(SwaToolBase):
             # For Flow package dir is assessment working dir
             assessment_working_dir = self.build_artifacts_helper.get_pkg_dir()
 
-            start_time = utillib.posix_epoch()
-
             # TODO: create flow config
             self._create_flowconfig(assessment_working_dir)
+
+            self._install_flowtyped(
+                artifacts, assessment_working_dir, results_root_dir, assessment_summary)
+
+            start_time = utillib.posix_epoch()
 
             exit_code, environ = utillib.run_cmd(assess_cmd,
                                                  outfile=outfile,
@@ -163,23 +224,28 @@ class Flow(SwaToolBase):
                                                  env=self._get_env(),
                                                  description='ASSESSMENT')
 
+            end_time = utillib.posix_epoch()
+
+            if self._validate_exit_code(exit_code):
+                passed += 1
+                execution_successful = True
+            else:
+                failed += 1
+                execution_successful = False
+
             # write assessment summary file
             # return pass, fail, assessment_summary
             assessment_summary.add_report(artifacts['id'],
                                           assess_cmd,
                                           exit_code,
+                                          execution_successful,
                                           environ,
                                           assessment_working_dir,
                                           assessment_report,
                                           outfile,
                                           errfile,
                                           start_time,
-                                          utillib.posix_epoch())
-
-            if self._validate_exit_code(exit_code):
-                passed += 1
-            else:
-                failed += 1
+                                          end_time)
 
         return (passed, failed, None, assessment_summary_file)
 
@@ -258,23 +324,28 @@ class Retire(SwaToolBase):
                                                  env=self._get_env(),
                                                  description='ASSESSMENT')
 
+            end_time = utillib.posix_epoch()
+
+            if self._validate_exit_code(exit_code):
+                passed += 1
+                execution_successful = True
+            else:
+                failed += 1
+                execution_successful = False
+
             # write assessment summary file
             # return pass, fail, assessment_summary
             assessment_summary.add_report(artifacts['id'],
                                           assess_cmd,
                                           exit_code,
+                                          execution_successful,
                                           environ,
                                           assessment_working_dir,
                                           assessment_report,
                                           outfile,
                                           errfile,
                                           start_time,
-                                          utillib.posix_epoch())
-
-            if self._validate_exit_code(exit_code):
-                passed += 1
-            else:
-                failed += 1
+                                          end_time)
 
         return (passed, failed, None, assessment_summary_file)
 
@@ -328,4 +399,3 @@ class Eslint(JsTool):
                     self._tool_conf['tool-config-file'] = self._tool_conf['tool-default-config-file']
             else:
                 self._tool_conf['tool-config-file'] = self._tool_conf['tool-default-config-file']
-

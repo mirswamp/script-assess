@@ -154,11 +154,21 @@ class DevskimTool(SwaTool):
                                                  env=self._get_env(),
                                                  description='ASSESSMENT')
 
+            end_time = utillib.posix_epoch()
+
+            if self._validate_exit_code(exit_code):
+                passed += 1
+                execution_successful = True
+            else:
+                failed += 1
+                execution_successful = False
+
             # write assessment summary file
             # return pass, fail, assessment_summary
             assessment_summary.add_report(artifacts['id'],
                                           assess_cmd,
                                           exit_code,
+                                          execution_successful,
                                           environ,
                                           assessment_working_dir,
                                           assessment_report,
@@ -166,10 +176,5 @@ class DevskimTool(SwaTool):
                                           errfile,
                                           start_time,
                                           utillib.posix_epoch())
-
-            if self._validate_exit_code(exit_code):
-                passed += 1
-            else:
-                failed += 1
 
         return (passed, failed, None, assessment_summary_file)
