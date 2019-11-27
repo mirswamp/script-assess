@@ -12,8 +12,6 @@ import zipfile
 import pdb
 import pkgutil
 
-from . import gencmd
-
 
 if 'PermissionError' in __builtins__:
     PermissionException = PermissionError
@@ -243,14 +241,73 @@ def write_to_file(filename, obj):
 PARAM_REGEX = re.compile(r'<(?P<name>[a-zA-Z][a-zA-Z0-9-_]*)(?:(?P<op>%|\?\+|\?-)(?P<text>[^>]+))?>')
 
 
+def _add_sep(sep, _list):
+    # val[0], sep, val[1], sep, val[2]...
+
+    if len(_list) > 0:
+        for l in _list[:-1]:
+            yield l
+            yield sep
+
+        yield _list[-1]
+
+
+def process_parameter(obj, symbol_table):
+    '''obj: is a tuple (name, operator, text)'''
+
+    name, op, text = obj
+
+    if name not in symbol_table:
+        return None
+    else:
+        value = symbol_table[name]
+
+    if op is None:
+        if isinstance(value, str):
+            return value
+        elif isinstance(value, list):
+            param = '<' + name + '>'
+            logging.warning("WARNING: Deprecated functionality - expanding param {0}".format(param)
+                    + " should be a string not a list")
+            return value[0]
+        else:
+            raise Exception('value is not a string when op is None')
+    elif op == '%':
+        if not isinstance(value, list):
+            param = '<' + name + op + text + '>'
+            logging.warning("WARNING: Deprecated functionality - expanding param {0}".format(param)
+                    + " should be a list not a string")
+            return value
+
+        if text.isspace():
+            if text != ' ':
+                raise Exception('text is not as expected')
+            return value
+        elif text.strip() == text:
+            return text.join(value)
+        else:
+            return [val for val in _add_sep(text.strip(), value)]
+    elif op == '?+' or op == '?-':
+        wantTrueValue = op == '?+'
+        isTrueValue = string_to_bool(value)
+
+        if not (wantTrueValue ^ isTrueValue):
+            return text
+        else:
+            return None
+    else:
+        raise Exception('op is not recognized')
+
+
 def param_to_string(match, symbol_table):
     obj = (match.group('name'), match.group('op'), match.group('text'))
-    value = gencmd.process_parameter(obj, symbol_table)
+    value = process_parameter(obj, symbol_table)
 
     if not isinstance(value, str):
         value = ' '.join(value)
 
     return value
+
 
 def string_substitute(string_template, symbol_table):
     '''Substitues environment variables and
