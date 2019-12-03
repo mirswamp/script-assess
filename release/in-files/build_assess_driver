@@ -6,12 +6,15 @@ p=`basename $0`
 options=$@
 
 # An array with all the arguments
-arguments=($options)
+arguments=("$@")
+
+framework_module=script_assess
+framework_cmd=(python3 -B -m "$framework_module")
 
 # Loop index
 index=0
 
-for argument in $options; do
+for argument in "$@"; do
     # Incrementing index
     index=`expr $index + 1`
 
@@ -30,6 +33,9 @@ for argument in $options; do
 	--os-pkg-install-cmd)
 	    export VMOSPACKAGEINSTALL=${arguments[index]};;
 	--version)
+        version_file="$(dirname "$0")/build_assess_driver_version.txt"
+        version=$(cat "$version_file")
+        echo "$framework_module $version"
 	    exit 0;;
     esac
 done
@@ -183,4 +189,4 @@ export PYTHONPATH="${SCRIPTS_DIR}/lib:${PYTHONPATH}"
 echo
 echo $p: start script_assess
 set -x -v
-python3 -B -m script_assess --printVersion --printPlatform --inputDir "$VMINPUTDIR" --outDir "$VMOUTPUTDIR" --buildDir "$BUILD_DIR" --toolDir "$TOOL_DIR" --resultsDir "$RESULTS_DIR"
+"${framework_cmd[@]}" --printVersion --printPlatform --inputDir "$VMINPUTDIR" --outDir "$VMOUTPUTDIR" --buildDir "$BUILD_DIR" --toolDir "$TOOL_DIR" --resultsDir "$RESULTS_DIR"

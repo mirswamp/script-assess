@@ -142,6 +142,7 @@ base_plat base-plat:
 	@mkdir $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/version
 	@: > $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/version/__init__.py
 	@echo $(VERSION) > $(NAME_VERSION)/$(BASE_PLAT)/in-files/scripts/lib/version/version.txt
+	@echo $(VERSION) > $(NAME_VERSION)/$(BASE_PLAT)/in-files/build_assess_driver_version.txt
 	@cd $(NAME_VERSION)/$(BASE_PLAT)/in-files && tar cz -f scripts.tar.gz scripts && rm -rf scripts
 
 	@cp -r -p $(NODE_64_FULLPATH) $(NAME_VERSION)/$(BASE_PLAT)/in-files
