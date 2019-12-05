@@ -5,7 +5,7 @@ import shutil
 
 from .logger import LogTaskStatus
 from . import utillib
-from .import confreader
+from . import confreader
 from .utillib import FileNotFoundException
 
 
@@ -67,18 +67,25 @@ def parse_results(input_dir, assessment_summary_file, results_dir, output_dir):
  --summary_file={PATH_TO_SUMMARY_FILE}\
  --input_dir={PATH_TO_RESULTS_DIR}\
  --output_file={OUTPUT_FILENAME}\
- --weakness_count_file={WEAKNESS_COUNT_FILENAME}'
+ --weakness_count_file={WEAKNESS_COUNT_FILENAME}\
+ --parsed_results_data_conf_file={PARSED_RESULTS_DATA_CONF_FILE}'
 
     if not osp.isfile(assessment_summary_file):
         raise FileNotFoundException(assessment_summary_file)
 
     parser_exe_file = _get_results_parser(input_dir)
 
-    try:
-        parse_results_dir = osp.join(os.getcwd(), 'parsed_results')
-        if not osp.isdir(parse_results_dir):
-            os.mkdir(parse_results_dir)
+    services_conf_file = osp.join(input_dir, 'services.conf')
+    if osp.isfile(services_conf_file):
+        command_template += ' --services_conf_file={SERVICES_CONF_FILE}'
 
+    parse_results_dir = osp.join(os.getcwd(), 'parsed_results')
+    if not osp.isdir(parse_results_dir):
+        os.mkdir(parse_results_dir)
+
+    parsed_results_data_conf_file = osp.join(parse_results_dir, 'parsed_results_data.conf')
+
+    try:
         parse_results_logfile = osp.join(parse_results_dir, 'resultparser.log')
         parse_results_output_file = osp.join(parse_results_dir, 'parsed_results.xml')
         parse_weakness_count_file = osp.join(parse_results_dir, 'weakness_count.out')
@@ -97,6 +104,8 @@ def parse_results(input_dir, assessment_summary_file, results_dir, output_dir):
                                               PATH_TO_OUTPUT_DIR=parse_results_dir,
                                               OUTPUT_FILENAME=parse_results_output_file,
                                               WEAKNESS_COUNT_FILENAME=parse_weakness_count_file,
+                                              SERVICES_CONF_FILE=services_conf_file,
+                                              PARSED_RESULTS_DATA_CONF_FILE=parsed_results_data_conf_file,
                                               LOGFILE=parse_results_logfile)
 
             exit_code, _ = utillib.run_cmd(command,
@@ -124,13 +133,12 @@ def parse_results(input_dir, assessment_summary_file, results_dir, output_dir):
                                 osp.dirname(parse_results_dir),
                                 osp.basename(parse_results_dir))
 
-        parse_results_conf_dict = dict()
-        parse_results_conf_dict['parsed-results-dir'] = osp.basename(parse_results_dir)
-        parse_results_conf_dict['parsed-results-file'] = osp.basename(parse_results_output_file)
-        parse_results_conf_dict['parsed-results-archive'] = '{0}.tar.gz'.format(osp.basename(parse_results_dir))
+        parse_results_conf = confreader.read_conf_into_dict(parsed_results_data_conf_file)
+        parse_results_conf['parsed-results-dir'] = osp.basename(parse_results_dir)
+        parse_results_conf['parsed-results-archive'] = '{0}.tar.gz'.format(osp.basename(parse_results_dir))
 
         utillib.write_to_file(osp.join(output_dir, 'parsed_results.conf'),
-                              parse_results_conf_dict)
+                              parse_results_conf)
 
     if exit_code != 0:
         raise Exception('Exit Code Not 0')
