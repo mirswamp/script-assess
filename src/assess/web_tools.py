@@ -123,11 +123,13 @@ class Flow(SwaToolBase):
                     and utillib.string_to_bool(run_conf['internet-inaccessible']):
                 logging.info('FLOW_TYPED: Internet is inaccessible, skipping flow-typed')
                 status_dot_out.skip_task(msg_inline='internet inaccessible')
-            elif (not utillib.string_to_bool(artifacts['tool-flow-typed'])) \
-                    or 'tool-flow-typed-executable' not in artifacts \
-                    or 'tool-flow-typed-invoke' not in artifacts:
+            elif 'tool-flow-typed' in artifacts and not utillib.string_to_bool(artifacts['tool-flow-typed']):
                 logging.info('FLOW_TYPED: flow-typed is disabled, skipping')
                 status_dot_out.skip_task(msg_inline='disabled')
+            elif 'tool-flow-typed-executable' not in artifacts \
+                    or 'tool-flow-typed-invoke' not in artifacts:
+                logging.info('FLOW_TYPED: flow-typed is not configured in tool, skipping')
+                status_dot_out.skip_task(msg_inline='not configured')
             elif not osp.isfile(osp.join(assessment_working_dir, 'package.json')):
                 logging.info('FLOW_TYPED: package.json does not exist, skipping')
                 status_dot_out.skip_task(msg_inline='package.json missing')
