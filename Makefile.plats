@@ -38,6 +38,14 @@ NORMAL_PLATS  = \
 
 ## BLANK ABOVE
 
+## XXX due to an absurdely -low ELOOP on some linux kernels,
+## some platforms with many versions have "firewall" links
+## back to the actual version.   This is an unfortunate
+## broken-ness in linux.  The limit used to be more, now it
+## is 10 
+## This breaks the "change a version and incremental changes
+## move forward" model, alas.
+
 ## platforms sharing binaries
 BINARY_SHARE_PLATS=	\
 	debian-7.11-64=debian-7.0-64		\
@@ -53,6 +61,22 @@ BINARY_SHARE_PLATS=	\
 	debian-8.10-64=debian-8.0-64		\
 	debian-8.11-64=debian-8.0-64		\
 	debian-8.12-64=debian-8.0-64		\
+	\
+	debian-9.0-64=debian-8.0-64		\
+	debian-9.8-64=debian-9.0-64		\
+	debian-9.9-64=debian-9.0-64		\
+	debian-9.10-64=debian-9.0-64		\
+	debian-9.11-64=debian-9.0-64		\
+	debian-9.12-64=debian-9.0-64		\
+	debian-9.13-64=debian-9.0-64		\
+	\
+	debian-10.0-64=debian-8.0-64		\
+	debian-10.1-64=debian-10.0-64		\
+	debian-10.2-64=debian-10.0-64		\
+	debian-10.3-64=debian-10.0-64		\
+	debian-10.4-64=debian-10.0-64		\
+	debian-10.5-64=debian-10.0-64		\
+	debian-10.6-64=debian-10.0-64		\
 	\
 	rhel-6.7-32=centos-6.7-32		\
 	rhel-6.7-64=centos-6.7-64		\
@@ -104,9 +128,9 @@ BINARY_SHARE_PLATS=	\
 	rhel-7.6-64=rhel-7.5-64		\
 	scientific-7.6-64=scientific-7.5-64		\
 	\
-	centos-7.7-64=centos-7.6-64		\
-	rhel-7.7-64=rhel-7.6-64		\
-	scientific-7.7-64=scientific-7.6-64		\
+	centos-7.7-64=centos-7.2-64		\
+	rhel-7.7-64=rhel-7.2-64		\
+	scientific-7.7-64=scientific-7.2-64		\
 	\
 	centos-7.8-64=centos-7.7-64		\
 	rhel-7.8-64=rhel-7.7-64		\
@@ -116,9 +140,19 @@ BINARY_SHARE_PLATS=	\
 	rhel-7.9-64=rhel-7.8-64		\
 	scientific-7.9-64=scientific-7.8-64		\
 	\
+	centos-7.10-64=centos-7.9-64		\
+	rhel-7.10-64=rhel-7.9-64		\
+	scientific-7.10-64=scientific-7.9-64		\
+	\
+	centos-7.11-64=centos-7.10-64		\
+	rhel-7.11-64=rhel-7.10-64		\
+	scientific-7.11-64=scientific-7.10-64		\
+	\
 	fedora-25-64=fedora-24-64		\
 	\
 	ubuntu-18.04-64=ubuntu-16.04-64		\
+	ubuntu-20.04-64=ubuntu-16.04-64		\
+	ubuntu-22.04-64=ubuntu-16.04-64		\
 
 ## BLANK ABOVE
 
@@ -187,6 +221,9 @@ HYPERVISOR_PLATS=	\
 	test-ubuntu-12.04-64=ubuntu-12.04-64		\
 	test-ubuntu-14.04-64=ubuntu-14.04-64		\
 	test-ubuntu-16.04-64=ubuntu-16.04-64		\
+	test-ubuntu-18.04-64=ubuntu-18.04-64		\
+	test-ubuntu-20.04-64=ubuntu-20.04-64		\
+	test-ubuntu-22.04-64=ubuntu-22.04-64		\
 	\
 	test-centos-7.2-64=centos-7.2-64		\
 	test-rhel-7.2-64=rhel-7.2-64			\
@@ -219,6 +256,14 @@ HYPERVISOR_PLATS=	\
 	test-centos-7.9-64=centos-7.9-64		\
 	test-rhel-7.9-64=rhel-7.9-64			\
 	test-scientific-7.9-64=scientific-7.9-64	\
+	\
+	test-centos-7.10-64=centos-7.10-64		\
+	test-rhel-7.10-64=rhel-7.10-64			\
+	test-scientific-7.10-64=scientific-7.10-64	\
+	\
+	test-centos-7.11-64=centos-7.11-64		\
+	test-rhel-7.11-64=rhel-7.11-64			\
+	test-scientific-7.11-64=scientific-7.11-64	\
 
 ## BLANK ABOVE
 
