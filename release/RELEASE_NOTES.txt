@@ -1,4 +1,15 @@
 -----------------------------------
+script-assess version 1.4.5 (2020-05-20)
+-----------------------------------
+- add missing keys and values to build.conf: build-stderr-file,
+  build-stdout-file, config-stderr-file, and config-stdout-file
+- changed build's stdout and stderr filenames from build.out and build.err
+  to build_stdout.out and build_stderr.out
+- changed config's stdout and stderr filenames from combined config.out
+  to config_stdout.out and config_stderr.out
+- changed build.conf key: build-root-dir -> build-dir
+
+-----------------------------------
 script-assess version 1.4.4 (2020-04-09)
 -----------------------------------
 - Update build config and dependencies for current platforms.

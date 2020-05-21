@@ -40,6 +40,7 @@ class Package(metaclass=ABCMeta):
             raise NotADirectoryException()
 
         self.pkg_dir = osp.normpath(pkg_dir)
+        self._build_conf_extras = dict()
 
     def _get_env(self, pwd):
         new_env = dict(os.environ)
@@ -76,8 +77,13 @@ class Package(metaclass=ABCMeta):
                 config_cmd = '%s %s' % (self.pkg_conf['config-cmd'],
                                         self.pkg_conf.get('config-opt', ''))
 
-                outfile = osp.join(build_root_dir, 'config.out')
-                errfile = osp.join(build_root_dir, 'config.out')
+                config_stdout = 'config_stdout.out'
+                config_stderr = 'config_stderr.out'
+
+                outfile = osp.join(build_root_dir, config_stdout)
+                errfile = osp.join(build_root_dir, config_stderr)
+                self.add_build_conf_attr('config-stdout-file', config_stdout)
+                self.add_build_conf_attr('config-stderr-file', config_stderr)
 
                 exit_code, environ = utillib.run_cmd(config_cmd,
                                                      outfile,
@@ -128,8 +134,15 @@ class Package(metaclass=ABCMeta):
                 raise NotADirectoryException()
 
             build_cmd = self.get_build_cmd(build_root_dir)
-            outfile = osp.join(build_root_dir, 'build.out')
-            errfile = osp.join(build_root_dir, 'build.err')
+
+            build_stdout = 'build_stdout.out'
+            build_stderr = 'build_stderr.out'
+
+            outfile = osp.join(build_root_dir, build_stdout)
+            errfile = osp.join(build_root_dir, build_stderr)
+            self.add_build_conf_attr('build-stdout-file', build_stdout)
+            self.add_build_conf_attr('build-stderr-file', build_stderr)
+
 
             exit_code, environ = utillib.run_cmd(build_cmd,
                                                  cwd=pkg_build_dir,
@@ -189,3 +202,9 @@ class Package(metaclass=ABCMeta):
 
             self._configure(build_root_dir, build_summary)
             return self._build(build_root_dir, build_summary)
+
+    def add_build_conf_attr(self, name, value):
+        self._build_conf_extras[name] = value
+
+    def get_build_conf_extras(self):
+        return self._build_conf_extras

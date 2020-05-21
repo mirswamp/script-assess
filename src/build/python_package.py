@@ -161,6 +161,15 @@ class PythonWheelPkg(PythonPkg):
     def __init__(self, pkg_conf_file, input_root_dir, build_root_dir):
         ''' Do not call Package.__init__'''
 
+        ###
+        ### ^^^ WHAT??????  FIX ME
+        ###
+        #
+        # Package.__init__ needs to be called to initialize _build_conf_extras,
+        # Since it isn't, do it here
+        #
+        self._build_conf_extras = dict()
+
         self.pkg_conf = confreader.read_conf_into_dict(pkg_conf_file)
         self.pkg_conf['package-language'] = self.pkg_conf['package-language'].lower()
         self.input_root_dir = input_root_dir

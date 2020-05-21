@@ -86,7 +86,8 @@ def build(input_root_dir, output_root_dir, build_root_dir):
                                                 osp.basename(build_root_dir))
 
             build_conf['build-archive'] = osp.basename(build_archive)
-            build_conf['build-root-dir'] = osp.basename(build_root_dir)
+            build_conf['build-dir'] = osp.basename(build_root_dir)
+            build_conf.update(pkg_obj.get_build_conf_extras())
 
             utillib.write_to_file(osp.join(output_root_dir, 'build.conf'), build_conf)
 
