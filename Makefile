@@ -8,6 +8,14 @@ TARBALL = $(NAME_VERSION).tar
 
 P_SWAMP=/p/swamp
 
+## either P_SWAMP  or SWAMP_ROOT can be used due
+## to existing procedures and automation
+
+ifneq ($(SWAMP_ROOT),)
+P_SWAMP=$(SWAMP_ROOT)
+endif
+
+
 DEST_DIR = $(P_SWAMP)/home/vamshi/mnt/v1/releases
 DEST_DIR = tmp
 
