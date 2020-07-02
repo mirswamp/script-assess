@@ -20,6 +20,10 @@ while [ $# -gt 0 ] ; do
 			make_tarball=false
 			make_cksum=false
 			;;
+		--swamp-root)
+			p_swamp=$2
+			shift
+			;;
 		-*)
 			echo $p: $1: unkown optarg 1>&2
 			exit 1
@@ -36,15 +40,32 @@ if [ $# -lt 1  -o  $# -gt 2 ] ; then
     exit 1
 fi
 
-p_swamp=/p/swamp/frameworks
-
-## hack for vamshi's laptop environment
-if [ ! -d $p_swamp ] ; then
-    p_swamp=$HOME/$p_swamp
-    echo $p: adjusting /p/swamp for vamshi
+if [ -z "$p_swamp" ] ; then
+	## CS
+	p_swamp=/p/swamp
 fi
 
-update_platform=$p_swamp/platform/update-platform
+if [ ! -d "$p_swamp" ] ; then
+	echo $p: $p_swamp: swamp root missing 1>&2
+	exit 1
+fi
+
+p_swamp_fw=${p_swamp}/frameworks
+
+## hack for vamshi's laptop environment ... safe in case it is useful
+if false ; then
+	if [ ! -d $p_swamp_fw ] ; then
+	    p_swamp=$HOME/$p_swamp_fw
+	    echo $p: adjusting /p/swamp for vamshi
+	fi
+fi
+
+if [ ! -d "$p_swamp_fw" ] ; then
+	echo $p: $p_swamp: frameworks dir missing 1>&2
+	exit 1
+fi
+
+update_platform=$p_swamp_fw/platform/update-platform
 
 if [ ! -x $update_platform ] ; then
     echo $p: platform update tool missing/unusable 1>&2
@@ -137,7 +158,7 @@ function copy_scripts {
     [[ -n "$NODEJS_x86_32" ]] && cp -r "$NODEJS_x86_32" "$dest_dir/in-files"
     cp -r "$PHP_COMPOSER" "$dest_dir/in-files"
     
-    $update_platform --framework node.js  --dir "$dest_dir/in-files" || exit 1
+    $update_platform --swamp-root ${p_swamp} --framework node.js  --dir "$dest_dir/in-files" || exit 1
 
     local scripts_dir="$dest_dir/in-files/scripts"
     mkdir -p "$scripts_dir"

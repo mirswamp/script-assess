@@ -35,6 +35,10 @@ PYTHON_3_FULLPATH=$(PYTHON_3_BINARIES)/$(PLAT)/$(PYTHON_3_BINARY)
 
 ## Platform update tool
 UPDATE_PLATFORM=$(SWAMP_FW)/platform/update-platform
+ifneq ($(P_SWAMP),/p/swamp)
+UPDATE_PLATFORM += --swamp-root $(P_SWAMP)
+endif
+
 
 MAKE_MD5SUM = find -P $(NAME_VERSION) -type f -not -name md5sum \
     -exec md5sum '{}' '+' > $(NAME_VERSION)/md5sum
