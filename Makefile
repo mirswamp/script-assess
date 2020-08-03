@@ -15,12 +15,24 @@ ifneq ($(SWAMP_ROOT),)
 P_SWAMP=$(SWAMP_ROOT)
 endif
 
+##
+## SWAMP_FRAMEWORK_DEPENDENCIES from the environment or command line
+## overrides both P_SWAMP and SWAMP_ROOT
+##   both P_SWAMP and SWAMP_ROOT should be removed
+##
 
-DEST_DIR = $(P_SWAMP)/home/vamshi/mnt/v1/releases
+ifneq ($(SWAMP_FRAMEWORK_DEPENDENCIES),)
+    export SWAMP_FRAMEWORK_DEPENDENCIES
+    SWAMP_FW=$(SWAMP_FRAMEWORK_DEPENDENCIES)
+    # set P_SWAMP to default value to make it appear it is not set
+    P_SWAMP=/p/swamp
+else
+    SWAMP_FW=$(P_SWAMP)/frameworks
+endif
+
+# DEST_DIR = $(P_SWAMP)/home/vamshi/mnt/v1/releases
 DEST_DIR = tmp
 
-
-SWAMP_FW=$(P_SWAMP)/frameworks
 
 SWAMP_FW_PY=$(SWAMP_FW)/python
 

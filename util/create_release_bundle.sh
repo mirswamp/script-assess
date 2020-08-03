@@ -45,12 +45,23 @@ if [ -z "$p_swamp" ] ; then
 	p_swamp=/p/swamp
 fi
 
-if [ ! -d "$p_swamp" ] ; then
-	echo $p: $p_swamp: swamp root missing 1>&2
-	exit 1
+if [ -n "$SWAMP_FRAMEWORK_DEPENDENCIES" ]; then
+        if [ ! -d "$SWAMP_FRAMEWORK_DEPENDENCIES" ]; then
+                echo "$p: SWAMP_FRAMEWORK_DEPENDENCIES set, but not a directory ($SWAMP_FRAMEWORK_DEPENDENCIES)" 1>&2
+                exit 1
+        fi
+        ## SWAMP_FRAMEWORK_DEPENDENCIES overrides p_swamp & --swamp-root
+        ## XXX all uses of p_swamp should be removed
+        ## set p_swamp here, so the rest of script ignores it
+        p_swamp=UNDEFINED_USING__SWAMP_FRAMEWORK_DEPENDENCIES__VAR
+        p_swamp_fw=$SWAMP_FRAMEWORK_DEPENDENCIES
+elif [ ! -d $p_swamp ] ; then
+        echo $p: $p_swamp: swamp root dir missing 1>&2
+        exit 1
+else
+        p_swamp_fw=${p_swamp}/frameworks
 fi
 
-p_swamp_fw=${p_swamp}/frameworks
 
 ## hack for vamshi's laptop environment ... safe in case it is useful
 if false ; then
@@ -61,7 +72,7 @@ if false ; then
 fi
 
 if [ ! -d "$p_swamp_fw" ] ; then
-	echo $p: $p_swamp: frameworks dir missing 1>&2
+	echo $p: $p_swamp_fw: frameworks dir missing 1>&2
 	exit 1
 fi
 
@@ -126,8 +137,8 @@ function main {
 
 	for plat in ubuntu-16.04-64; do
 		create_dir "$dest_dir/$plat/in-files"
-		cp "$p_swamp/frameworks/python/python-3-arch/$plat/python-3-bin.tar.gz"  "$dest_dir/$plat/in-files"
-		cp "$p_swamp/frameworks/python/python-2-arch/$plat/python-2-bin.tar.gz"  "$dest_dir/$plat/in-files"
+		cp "$p_swamp_fw/python/python-3-arch/$plat/python-3-bin.tar.gz"  "$dest_dir/$plat/in-files"
+		cp "$p_swamp_fw/python/python-2-arch/$plat/python-2-bin.tar.gz"  "$dest_dir/$plat/in-files"
 		create_links "$dest_dir/$main_plat/in-files" "$dest_dir/$plat/in-files"
 	done
 	cp $PWD/release/{LICENSE.txt,RELEASE_NOTES.txt} "$dest_dir"
@@ -142,7 +153,7 @@ function copy_scripts {
     [[ -d "$release_dir/swamp-conf" ]] && \
 		cp -r "$release_dir/swamp-conf" "$dest_dir"
 
-    FRAMEWORKS="/p/swamp/frameworks"
+    FRAMEWORKS="$p_swamp_fw"
 
     if [[ ! -d "$FRAMEWORKS" ]]; then
 		FRAMEWORKS="$HOME/$FRAMEWORKS"
